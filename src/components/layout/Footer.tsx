@@ -8,6 +8,7 @@ const exploreLinks = [
 
 const aboutLinks = [
   { href: "/about", label: "About" },
+  { href: "/meet-the-team", label: "Meet the Team" },
   { href: "/partnership", label: "Partnership" },
   { href: "/faq", label: "FAQ" },
   { href: "/download", label: "Download App" },

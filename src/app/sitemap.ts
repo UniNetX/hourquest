@@ -7,6 +7,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/challenges",
     "/leaderboard",
     "/about",
+    "/meet-the-team",
     "/partnership",
     "/faq",
     "/terraserve-app",
