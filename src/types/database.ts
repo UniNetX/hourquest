@@ -101,6 +101,10 @@ export interface StudentStory {
   submitted_at: string;
   approved_at: string | null;
   approved_by: string | null;
+  show_on_homepage?: boolean;
+  homepage_sort_order?: number;
+  display_name?: string | null;
+  display_school?: string | null;
 }
 
 export interface Profile {

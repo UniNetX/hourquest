@@ -26,7 +26,7 @@ async function getHomeData() {
   const supabase = await createClient();
   const empty = {
     featured: [] as Challenge[],
-    stats: { hours: 0, students: 0, challenges: 30 },
+    stats: { hours: 0, students: 0, challenges: 0 },
     leaderboard: [],
     stories: [],
     user: null,
@@ -36,27 +36,47 @@ async function getHomeData() {
     return empty;
   }
 
-  const [challengesRes, statsRes, leaderboardRes, storiesRes, userRes] =
-    await Promise.all([
+  const [challengesRes, statsRes, leaderboardRes, userRes] = await Promise.all([
+    supabase
+      .from("challenges")
+      .select("*")
+      .eq("active", true)
+      .order("sort_order"),
+    Promise.all([
+      supabase.from("profiles").select("total_verified_hours"),
+      supabase.from("profiles").select("id", { count: "exact", head: true }),
       supabase
         .from("challenges")
-        .select("*")
-        .eq("active", true)
-        .order("sort_order"),
-      Promise.all([
-        supabase.from("profiles").select("total_verified_hours"),
-        supabase.from("profiles").select("id", { count: "exact", head: true }),
-        supabase.from("challenges").select("id", { count: "exact", head: true }),
-      ]),
-      supabase.from("individual_leaderboard_all_time").select("*").limit(3),
-      supabase
-        .from("student_stories")
-        .select("*, profiles(full_name, school_name)")
-        .eq("approved", true)
-        .order("submitted_at", { ascending: false })
-        .limit(6),
-      supabase.auth.getUser(),
-    ]);
+        .select("id", { count: "exact", head: true })
+        .eq("active", true),
+    ]),
+    supabase.from("individual_leaderboard_all_time").select("*").limit(3),
+    supabase.auth.getUser(),
+  ]);
+
+  const curatedStories = await supabase
+    .from("student_stories")
+    .select("*, profiles(full_name, school_name)")
+    .eq("approved", true)
+    .eq("show_on_homepage", true)
+    .order("homepage_sort_order", { ascending: true })
+    .order("submitted_at", { ascending: false })
+    .limit(12);
+
+  let stories = curatedStories.data ?? [];
+  if (curatedStories.error || stories.length === 0) {
+    const recentStories = await supabase
+      .from("student_stories")
+      .select("*, profiles(full_name, school_name)")
+      .eq("approved", true)
+      .order("submitted_at", { ascending: false })
+      .limit(6);
+    if (!curatedStories.error && stories.length === 0) {
+      stories = recentStories.data ?? [];
+    } else if (curatedStories.error) {
+      stories = recentStories.data ?? [];
+    }
+  }
 
   const hours =
     (statsRes[0].data as { total_verified_hours: number }[] | null)?.reduce(
@@ -85,10 +105,10 @@ async function getHomeData() {
     stats: {
       hours: Math.floor(hours),
       students: statsRes[1].count ?? 0,
-      challenges: statsRes[2].count ?? 30,
+      challenges: statsRes[2].count ?? 0,
     },
     leaderboard: leaderboardRes.data ?? [],
-    stories: storiesRes.data ?? [],
+    stories,
     user: userRes.data.user,
   };
 }

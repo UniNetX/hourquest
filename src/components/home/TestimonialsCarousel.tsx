@@ -59,6 +59,8 @@ type StoryRow = {
   id: string;
   rating: number;
   comment: string;
+  display_name?: string | null;
+  display_school?: string | null;
   profiles?: { full_name: string; school_name: string | null } | null;
 };
 
@@ -67,8 +69,9 @@ function toTestimonials(stories: StoryRow[]): Testimonial[] {
     id: s.id,
     rating: s.rating,
     comment: s.comment,
-    name: s.profiles?.full_name ?? "Anonymous",
-    school: s.profiles?.school_name ?? "Verified student",
+    name: s.display_name?.trim() || s.profiles?.full_name || "Anonymous",
+    school:
+      s.display_school?.trim() || s.profiles?.school_name || "Verified student",
   }));
 }
 

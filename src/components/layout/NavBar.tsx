@@ -89,9 +89,9 @@ export function NavBar({
 
   const loggedInLinks = user
     ? [
+        { href: "/", label: "Home" },
         { href: "/challenges", label: "Challenges" },
         { href: "/leaderboard", label: "Leaderboard" },
-        { href: dashboardSectionHref("overview"), label: "My dashboard" },
       ]
     : null;
 

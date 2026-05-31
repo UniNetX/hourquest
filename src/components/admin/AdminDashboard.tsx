@@ -52,6 +52,30 @@ type ProfileRow = {
   created_at: string;
 };
 
+type StudentStoryWithProfile = StudentStory & {
+  profiles?: { full_name: string; school_name: string | null } | null;
+};
+
+type StoryEditDraft = {
+  comment: string;
+  rating: number;
+  show_on_homepage: boolean;
+  homepage_sort_order: number;
+  display_name: string;
+  display_school: string;
+};
+
+function storyDefaults(story: StudentStoryWithProfile): StoryEditDraft {
+  return {
+    comment: story.comment,
+    rating: story.rating,
+    show_on_homepage: story.show_on_homepage ?? false,
+    homepage_sort_order: story.homepage_sort_order ?? 0,
+    display_name: story.display_name ?? story.profiles?.full_name ?? "",
+    display_school: story.display_school ?? story.profiles?.school_name ?? "",
+  };
+}
+
 function SortableChallengeRow({
   challenge,
   onEdit,
@@ -138,7 +162,9 @@ export function AdminDashboard({
   >("submissions");
   const [submissions, setSubmissions] = useState(initialSubmissions);
   const [challenges, setChallenges] = useState(initialChallenges);
-  const [stories, setStories] = useState(initialStories);
+  const [stories, setStories] = useState(initialStories as StudentStoryWithProfile[]);
+  const [editingStoryId, setEditingStoryId] = useState<string | null>(null);
+  const [storyDraft, setStoryDraft] = useState<StoryEditDraft | null>(null);
   const [users, setUsers] = useState(initialUsers);
   const [trackFilter, setTrackFilter] = useState<ChallengeTrack>("environmental");
   const [categoryFilter, setCategoryFilter] = useState<ChallengeCategory | "all">("all");
@@ -162,7 +188,10 @@ export function AdminDashboard({
     const [subs, chals, sts, profs, partnerRows] = await Promise.all([
       supabase.from("challenge_submissions").select("*").order("submitted_at", { ascending: false }),
       supabase.from("challenges").select("*").order("track").order("category").order("sort_order"),
-      supabase.from("student_stories").select("*").order("submitted_at", { ascending: false }),
+      supabase
+        .from("student_stories")
+        .select("*, profiles(full_name, school_name)")
+        .order("submitted_at", { ascending: false }),
       supabase.from("profiles").select("id, full_name, school_name, total_verified_hours, created_at").order("created_at", { ascending: false }).limit(100),
       supabase.rpc("admin_list_partner_orgs", { p_status: null }),
     ]);
@@ -252,6 +281,37 @@ export function AdminDashboard({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ storyId: id, approved }),
     });
+    loadData();
+  }
+
+  function startEditStory(story: StudentStoryWithProfile) {
+    setEditingStoryId(story.id);
+    setStoryDraft(storyDefaults(story));
+  }
+
+  async function saveStoryEdit(storyId: string) {
+    if (!storyDraft) return;
+    const res = await fetch("/api/admin/stories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "update",
+        storyId,
+        comment: storyDraft.comment,
+        rating: storyDraft.rating,
+        showOnHomepage: storyDraft.show_on_homepage,
+        homepageSortOrder: storyDraft.homepage_sort_order,
+        displayName: storyDraft.display_name,
+        displaySchool: storyDraft.display_school,
+      }),
+    });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      alert(json.error ?? "Failed to save story");
+      return;
+    }
+    setEditingStoryId(null);
+    setStoryDraft(null);
     loadData();
   }
 
@@ -482,22 +542,200 @@ export function AdminDashboard({
         )}
 
         {tab === "stories" && (
-          <div className="space-y-2">
-            {stories
-              .filter((s) => !s.approved)
-              .map((story) => (
-                <Card key={story.id}>
-                  <p className="text-[13px]">{story.comment}</p>
-                  <div className="mt-2 flex gap-2">
-                    <Button className="px-3 py-1 text-[12px]" onClick={() => moderateStory(story.id, true)}>
-                      Approve
-                    </Button>
-                    <Button variant="danger" className="px-3 py-1 text-[12px]" onClick={() => moderateStory(story.id, false)}>
-                      Reject
-                    </Button>
-                  </div>
-                </Card>
-              ))}
+          <div className="space-y-8">
+            <div>
+              <h2 className="mb-3 text-lg font-medium">Pending reviews</h2>
+              {stories.filter((s) => !s.approved).length === 0 ? (
+                <Card className="text-sm text-text-muted">No pending stories.</Card>
+              ) : (
+                <div className="space-y-2">
+                  {stories
+                    .filter((s) => !s.approved)
+                    .map((story) => (
+                      <Card key={story.id}>
+                        <p className="text-[13px]">{story.comment}</p>
+                        <div className="mt-2 flex gap-2">
+                          <Button
+                            className="px-3 py-1 text-[12px]"
+                            onClick={() => moderateStory(story.id, true)}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            variant="danger"
+                            className="px-3 py-1 text-[12px]"
+                            onClick={() => moderateStory(story.id, false)}
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <h2 className="mb-1 text-lg font-medium">Homepage testimonials</h2>
+              <p className="mb-4 text-sm text-text-muted">
+                Choose and edit reviews shown in the home page carousel. Enable
+                &ldquo;Show on homepage&rdquo; and set order (lower numbers appear first).
+              </p>
+              {stories.filter((s) => s.approved).length === 0 ? (
+                <Card className="text-sm text-text-muted">No approved stories yet.</Card>
+              ) : (
+                <div className="space-y-3">
+                  {stories
+                    .filter((s) => s.approved)
+                    .map((story) => {
+                      const isEditing = editingStoryId === story.id;
+                      const draft = isEditing ? storyDraft : null;
+                      const profileName = story.profiles?.full_name ?? "Student";
+                      return (
+                        <Card key={story.id}>
+                          {isEditing && draft ? (
+                            <div className="space-y-3">
+                              <div>
+                                <Label>Quote</Label>
+                                <Textarea
+                                  value={draft.comment}
+                                  onChange={(e) =>
+                                    setStoryDraft({ ...draft, comment: e.target.value })
+                                  }
+                                  rows={3}
+                                />
+                              </div>
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <div>
+                                  <Label>Rating (1–5)</Label>
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    max={5}
+                                    value={draft.rating}
+                                    onChange={(e) =>
+                                      setStoryDraft({
+                                        ...draft,
+                                        rating: Number(e.target.value),
+                                      })
+                                    }
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Homepage order</Label>
+                                  <Input
+                                    type="number"
+                                    min={0}
+                                    value={draft.homepage_sort_order}
+                                    onChange={(e) =>
+                                      setStoryDraft({
+                                        ...draft,
+                                        homepage_sort_order: Number(e.target.value),
+                                      })
+                                    }
+                                  />
+                                </div>
+                              </div>
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <div>
+                                  <Label>Display name</Label>
+                                  <Input
+                                    value={draft.display_name}
+                                    placeholder={profileName}
+                                    onChange={(e) =>
+                                      setStoryDraft({
+                                        ...draft,
+                                        display_name: e.target.value,
+                                      })
+                                    }
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Display school</Label>
+                                  <Input
+                                    value={draft.display_school}
+                                    placeholder={story.profiles?.school_name ?? ""}
+                                    onChange={(e) =>
+                                      setStoryDraft({
+                                        ...draft,
+                                        display_school: e.target.value,
+                                      })
+                                    }
+                                  />
+                                </div>
+                              </div>
+                              <label className="flex items-center gap-2 text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={draft.show_on_homepage}
+                                  onChange={(e) =>
+                                    setStoryDraft({
+                                      ...draft,
+                                      show_on_homepage: e.target.checked,
+                                    })
+                                  }
+                                />
+                                Show on homepage
+                              </label>
+                              <div className="flex gap-2">
+                                <Button
+                                  className="px-3 py-1 text-[12px]"
+                                  onClick={() => saveStoryEdit(story.id)}
+                                >
+                                  Save
+                                </Button>
+                                <Button
+                                  variant="secondary"
+                                  className="px-3 py-1 text-[12px]"
+                                  onClick={() => {
+                                    setEditingStoryId(null);
+                                    setStoryDraft(null);
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="flex flex-wrap items-start justify-between gap-2">
+                                <div>
+                                  <p className="text-[13px] font-medium">
+                                    {story.display_name || profileName}
+                                    {(story.show_on_homepage ?? false) && (
+                                      <span className="ml-2 rounded-full bg-primary-light px-2 py-0.5 text-[10px] font-semibold text-primary">
+                                        On homepage
+                                      </span>
+                                    )}
+                                  </p>
+                                  <p className="text-[11px] text-text-caption">
+                                    {story.display_school ||
+                                      story.profiles?.school_name ||
+                                      "No school"}
+                                    {" · "}
+                                    {story.rating} stars · order{" "}
+                                    {story.homepage_sort_order ?? 0}
+                                  </p>
+                                </div>
+                                <Button
+                                  variant="secondary"
+                                  className="px-3 py-1 text-[12px]"
+                                  onClick={() => startEditStory(story)}
+                                >
+                                  Edit
+                                </Button>
+                              </div>
+                              <p className="mt-2 text-[13px] italic text-text-muted">
+                                &ldquo;{story.comment}&rdquo;
+                              </p>
+                            </>
+                          )}
+                        </Card>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

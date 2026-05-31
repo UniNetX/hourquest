@@ -48,7 +48,10 @@ export default async function AdminPage() {
       .select("*")
       .order("submitted_at", { ascending: false }),
     supabase.from("challenges").select("*").order("category").order("sort_order"),
-    supabase.from("student_stories").select("*").order("submitted_at", { ascending: false }),
+    supabase
+      .from("student_stories")
+      .select("*, profiles(full_name, school_name)")
+      .order("submitted_at", { ascending: false }),
     supabase
       .from("profiles")
       .select("id, full_name, school_name, total_verified_hours, created_at")

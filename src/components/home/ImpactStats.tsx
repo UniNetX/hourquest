@@ -1,14 +1,15 @@
 import { SectionHeader } from "@/components/marketing/SectionHeader";
 import { StatCard } from "@/components/marketing/StatCard";
-import { displayImpactStats } from "@/lib/challenges/constants";
+
+function formatCount(value: number) {
+  return value.toLocaleString("en-US");
+}
 
 export function ImpactStats({
   stats,
 }: {
   stats: { hours: number; students: number; challenges: number };
 }) {
-  const display = displayImpactStats(stats);
-
   return (
     <section className="section-alt section-y">
       <div className="section-container">
@@ -19,17 +20,17 @@ export function ImpactStats({
         />
         <div className="grid gap-4 sm:grid-cols-3">
           <StatCard
-            value={`${display.hours}+`}
+            value={formatCount(stats.hours)}
             label="Hours Verified"
             description="Reviewed and approved for college applications"
           />
           <StatCard
-            value={`${display.students}+`}
+            value={formatCount(stats.students)}
             label="Students"
             description="Earning verified hours on HourQuest"
           />
           <StatCard
-            value={`${display.challenges}+`}
+            value={formatCount(stats.challenges)}
             label="Challenges"
             description="Environmental and medical actions you can complete anywhere"
           />
