@@ -2,6 +2,7 @@ import { PublicShell } from "@/components/layout/PublicShell";
 import { PageHero } from "@/components/layout/PageHero";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { getAdminEmails } from "@/lib/admin";
 import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
@@ -16,25 +17,31 @@ const cards = [
     description:
       "Bring verified environmental and health service hours to your students with a free, turnkey platform.",
     cta: "Apply for School Access",
-    href: "mailto:partnerships@terraserve.org?subject=School%20Access",
+    subject: "School Access",
   },
   {
     title: "For Organizations",
     description:
       "Partner with HourQuest to connect students with meaningful environmental and medical volunteer opportunities.",
     cta: "Become a Partner Organization",
-    href: "mailto:partnerships@terraserve.org?subject=Organization%20Partnership",
+    subject: "Organization Partnership",
   },
   {
     title: "For Colleges & Universities",
     description:
       "Recognize HourQuest verified hours and certificates as part of your admissions process.",
     cta: "Contact Us",
-    href: "mailto:partnerships@terraserve.org?subject=College%20Partnership",
+    subject: "College Partnership",
   },
 ];
 
+function partnershipMailto(subject: string, adminEmail: string) {
+  return `mailto:${adminEmail}?subject=${encodeURIComponent(subject)}`;
+}
+
 export default function PartnershipPage() {
+  const adminEmail = getAdminEmails()[0] ?? "";
+
   return (
     <PublicShell>
       <PageHero
@@ -52,7 +59,15 @@ export default function PartnershipPage() {
               <p className="mt-2 text-sm leading-relaxed text-text-muted">
                 {card.description}
               </p>
-              <Button href={card.href} className="mt-5">
+              <Button
+                href={
+                  adminEmail
+                    ? partnershipMailto(card.subject, adminEmail)
+                    : undefined
+                }
+                className="mt-5"
+                disabled={!adminEmail}
+              >
                 {card.cta}
               </Button>
             </Card>

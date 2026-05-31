@@ -1,7 +1,6 @@
 import { PublicShell } from "@/components/layout/PublicShell";
 import { CtaBand } from "@/components/marketing/CtaBand";
 import { DualCtaPanel } from "@/components/marketing/DualCtaPanel";
-import { ChallengeCategoriesSection } from "@/components/home/ChallengeCategoriesSection";
 import { Differentiators } from "@/components/home/Differentiators";
 import { FeaturedChallengesSection } from "@/components/home/FeaturedChallengesSection";
 import { HomeHero } from "@/components/home/HomeHero";
@@ -106,7 +105,6 @@ export default async function HomePage() {
       <ImpactStats stats={stats} />
       <HowItWorks />
       <TerraServeAppSection />
-      <ChallengeCategoriesSection />
       <FeaturedChallengesSection challenges={featured} startHref={startHref} />
       <DualCtaPanel
         title="How Can We Help You?"

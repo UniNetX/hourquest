@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChallengeCard } from "@/components/challenges/ChallengeCard";
 import { PageHero } from "@/components/layout/PageHero";
+import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import {
   CHALLENGE_TRACKS,
@@ -16,15 +17,18 @@ import type { Challenge, ChallengeCategory, ChallengeTrack } from "@/types/datab
 const filterBtn =
   "rounded-sm border px-4 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2";
 
-type TrackFilter = ChallengeTrack | "all";
+type TrackFilter = ChallengeTrack | "all" | "partnership";
 
 const TRACK_FILTERS: { id: TrackFilter; label: string }[] = [
   { id: "all", label: "All" },
   ...CHALLENGE_TRACKS,
+  { id: "partnership", label: "Partnership" },
 ];
 
 function parseTrack(value: string | null): TrackFilter {
-  if (value === "medical" || value === "environmental") return value;
+  if (value === "medical" || value === "environmental" || value === "partnership") {
+    return value;
+  }
   return "all";
 }
 
@@ -55,7 +59,7 @@ export function ChallengeCatalog({
     const nextTrack = parseTrack(searchParams.get("track"));
     setTrack(nextTrack);
     const raw = searchParams.get("category") as ChallengeCategory | null;
-    if (!raw || nextTrack === "all") {
+    if (!raw || nextTrack === "all" || nextTrack === "partnership") {
       setCategory("all");
       return;
     }
@@ -82,8 +86,8 @@ export function ChallengeCatalog({
   }
 
   function onTrackChange(nextTrack: TrackFilter) {
-    if (nextTrack === "all") {
-      updateFilters("all", "all");
+    if (nextTrack === "all" || nextTrack === "partnership") {
+      updateFilters(nextTrack, "all");
       return;
     }
     const categories = getCategoriesForTrack(nextTrack);
@@ -120,9 +124,12 @@ export function ChallengeCatalog({
   }, []);
 
   const trackCategories =
-    track === "all" ? [] : getCategoriesForTrack(track);
+    track === "environmental" || track === "medical"
+      ? getCategoriesForTrack(track)
+      : [];
 
   const filtered = useMemo(() => {
+    if (track === "partnership") return [];
     const list = challenges.filter((c) => {
       if (track !== "all" && challengeTrack(c) !== track) return false;
       if (category !== "all" && c.category !== category) return false;
@@ -173,7 +180,7 @@ export function ChallengeCatalog({
               </button>
             ))}
           </div>
-          {track !== "all" && (
+          {track !== "all" && track !== "partnership" && (
             <div
               className="filter-scroll mb-8 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:p-0"
               role="tablist"
@@ -212,16 +219,32 @@ export function ChallengeCatalog({
               ))}
             </div>
           )}
-          {track === "all" && <div className="mb-8" />}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((challenge) => (
-              <ChallengeCard
-                key={challenge.id}
-                challenge={challenge}
-                startHref={startHref(challenge.id)}
-              />
-            ))}
-          </div>
+          {(track === "all" || track === "partnership") && <div className="mb-8" />}
+          {track === "partnership" ? (
+            <div className="mx-auto max-w-lg rounded-lg border border-border bg-surface px-6 py-12 text-center">
+              <h2 className="font-display text-xl text-primary-dark">
+                Partnership Challenges
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-text-muted">
+                Organizations can post custom volunteer challenges here for
+                students to complete. We&apos;re setting this up — partner with
+                us to add yours.
+              </p>
+              <Button href="/partnership" variant="primary" className="mt-6">
+                Partner With Us
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((challenge) => (
+                <ChallengeCard
+                  key={challenge.id}
+                  challenge={challenge}
+                  startHref={startHref(challenge.id)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </>
