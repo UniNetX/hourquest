@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 
-export function HomeHero({ submitHref }: { submitHref?: string }) {
+export function HomeHero() {
   return (
     <section className="hero" aria-labelledby="hero-title">
       <div className="hero__backdrop" aria-hidden="true">
@@ -29,11 +29,6 @@ export function HomeHero({ submitHref }: { submitHref?: string }) {
           <Button href="/challenges" variant="cta" size="lg" className="w-full sm:w-auto">
             Start a Challenge
           </Button>
-          {submitHref && (
-            <Button href={submitHref} variant="outlineWhite" size="lg" className="w-full sm:w-auto">
-              Submit
-            </Button>
-          )}
           <Button href="/leaderboard" variant="outlineWhite" size="lg" className="w-full sm:w-auto">
             View Leaderboard
           </Button>

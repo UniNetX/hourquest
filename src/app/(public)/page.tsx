@@ -10,7 +10,7 @@ import { ImpactStats } from "@/components/home/ImpactStats";
 import { LeaderboardPreview } from "@/components/home/LeaderboardPreview";
 import { TestimonialsCarousel } from "@/components/home/TestimonialsCarousel";
 import { SectionHeader } from "@/components/marketing/SectionHeader";
-import { dashboardSectionHref, dashboardSubmitHref } from "@/lib/dashboard-nav";
+import { dashboardSubmitHref } from "@/lib/dashboard-nav";
 import { createClient } from "@/lib/supabase/server";
 import type { Challenge } from "@/types/database";
 import { createMetadata } from "@/lib/seo";
@@ -102,13 +102,7 @@ export default async function HomePage() {
 
   return (
     <PublicShell>
-      <HomeHero
-        submitHref={
-          user
-            ? dashboardSectionHref("submit")
-            : undefined
-        }
-      />
+      <HomeHero />
       <ImpactStats stats={stats} />
       <HowItWorks />
       <TerraServeAppSection />
