@@ -13,6 +13,8 @@ export const metadata = createMetadata({
 
 export default async function AdminPage() {
   const supabase = await createClient();
+  if (!supabase) redirect("/signin");
+
   const {
     data: { user },
   } = await supabase.auth.getUser();

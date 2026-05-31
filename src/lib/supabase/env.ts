@@ -8,3 +8,7 @@ export function getSupabaseEnv() {
 
   return { url, anonKey };
 }
+
+export function isSupabaseConfigured() {
+  return getSupabaseEnv() !== null;
+}

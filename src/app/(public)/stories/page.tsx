@@ -12,6 +12,19 @@ export const metadata = createMetadata({
 
 export default async function StoriesPage() {
   const supabase = await createClient();
+  if (!supabase) {
+    return (
+      <PublicShell>
+        <PageHero
+          eyebrow="Stories"
+          title="Student Stories"
+          subtitle="Real reviews from students earning verified environmental volunteer hours."
+        />
+        <StoriesPageClient stories={[]} canReview={false} />
+      </PublicShell>
+    );
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();

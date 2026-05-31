@@ -13,11 +13,15 @@ export async function generateMetadata({
 }) {
   const { userId } = await params;
   const supabase = await createClient();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", userId)
-    .single();
+  const profile = supabase
+    ? (
+        await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", userId)
+          .single()
+      ).data
+    : null;
 
   return createMetadata({
     title: `${profile?.full_name ?? "Student"} — TerraServe Profile`,
@@ -33,6 +37,8 @@ export default async function PublicProfilePage({
 }) {
   const { userId } = await params;
   const supabase = await createClient();
+  if (!supabase) notFound();
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")

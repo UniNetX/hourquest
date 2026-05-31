@@ -5,6 +5,9 @@ import { sendChallengeEmail } from "@/lib/email/send";
 export async function POST(request: Request) {
   const body = await request.json();
   const supabase = await createServiceClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
+  }
 
   if (body.type === "submission_approved" || body.type === "submission_rejected") {
     const { data: submission } = await supabase

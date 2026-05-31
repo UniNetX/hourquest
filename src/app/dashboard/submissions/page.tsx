@@ -11,6 +11,8 @@ export const metadata = createMetadata({
 
 export default async function SubmissionsPage() {
   const supabase = await createClient();
+  if (!supabase) return null;
+
   const {
     data: { user },
   } = await supabase.auth.getUser();

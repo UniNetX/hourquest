@@ -24,6 +24,18 @@ export const metadata = createMetadata({
 
 async function getHomeData() {
   const supabase = await createClient();
+  const empty = {
+    featured: [] as Challenge[],
+    stats: { hours: 0, students: 0, challenges: 30 },
+    leaderboard: [],
+    stories: [],
+    schools: [] as string[],
+    user: null,
+  };
+
+  if (!supabase) {
+    return empty;
+  }
 
   const [challengesRes, statsRes, leaderboardRes, storiesRes, userRes, schoolsRes] =
     await Promise.all([

@@ -11,10 +11,12 @@ export const metadata = createMetadata({
 
 export default async function LeaderboardPage() {
   const supabase = await createClient();
-  const [individualRes, schoolsRes] = await Promise.all([
-    supabase.from("individual_leaderboard_all_time").select("*").limit(50),
-    supabase.from("school_leaderboard").select("*").limit(50),
-  ]);
+  const [individualRes, schoolsRes] = supabase
+    ? await Promise.all([
+        supabase.from("individual_leaderboard_all_time").select("*").limit(50),
+        supabase.from("school_leaderboard").select("*").limit(50),
+      ])
+    : [{ data: [] }, { data: [] }];
 
   return (
     <PublicShell>

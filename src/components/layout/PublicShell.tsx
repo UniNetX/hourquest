@@ -5,23 +5,25 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function PublicShell({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   let navUser: { name: string; avatarUrl?: string | null } | null = null;
 
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name, avatar_url")
-      .eq("id", user.id)
-      .single();
+  if (supabase) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    navUser = {
-      name: profile?.full_name || user.email?.split("@")[0] || "Student",
-      avatarUrl: profile?.avatar_url,
-    };
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("id", user.id)
+        .single();
+
+      navUser = {
+        name: profile?.full_name || user.email?.split("@")[0] || "Student",
+        avatarUrl: profile?.avatar_url,
+      };
+    }
   }
 
   return (

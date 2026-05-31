@@ -12,15 +12,20 @@ export const metadata = createMetadata({
 
 export default async function ChallengesPage() {
   const supabase = await createClient();
-  const [{ data: challenges }, { data: { user } }] = await Promise.all([
+  const [{ data: challenges }, userResult] = await Promise.all([
     supabase
-      .from("challenges")
-      .select("*")
-      .eq("active", true)
-      .order("category")
-      .order("sort_order"),
-    supabase.auth.getUser(),
+      ? supabase
+          .from("challenges")
+          .select("*")
+          .eq("active", true)
+          .order("category")
+          .order("sort_order")
+      : Promise.resolve({ data: [] }),
+    supabase
+      ? supabase.auth.getUser()
+      : Promise.resolve({ data: { user: null } }),
   ]);
+  const user = userResult.data.user;
 
   return (
     <PublicShell>
