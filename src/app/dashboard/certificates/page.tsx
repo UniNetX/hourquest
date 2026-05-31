@@ -8,7 +8,7 @@ import { createMetadata } from "@/lib/seo";
 import { format } from "date-fns";
 
 export const metadata = createMetadata({
-  title: "My Certificates — TerraServe Challenges",
+  title: "My Certificates — HourQuest",
   description: "Download your verified volunteer hour certificates.",
   path: "/dashboard/certificates",
   noIndex: true,

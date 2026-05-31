@@ -1,6 +1,6 @@
-# TerraServe Challenges Web
+# HourQuest Web
 
-Next.js web app for [challenges.terraserve.org](https://challenges.terraserve.org) — environmental volunteer challenges with verified hours and certificates.
+Next.js web app for [challenges.terraserve.org](https://challenges.terraserve.org) — environmental and medical volunteer challenges with verified hours and certificates.
 
 ## Setup
 

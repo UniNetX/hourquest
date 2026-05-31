@@ -11,8 +11,8 @@ import {
 import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
-  title: "About — TerraServe Challenges",
-  description: "Learn about TerraServe Challenges, verified hours, and our mission.",
+  title: "About — HourQuest",
+  description: "Learn about HourQuest, verified hours, and our mission.",
   path: "/about",
 });
 
@@ -34,7 +34,7 @@ const features = [
   },
   {
     title: "Also on the App",
-    description: "Hours from the TerraServe app count toward the same certificates.",
+    description: "Hours from the HourQuest app count toward the same certificates.",
     Icon: IconDeviceMobile,
   },
 ];
@@ -45,18 +45,18 @@ export default function AboutPage() {
       <PageHero
         large
         eyebrow="About"
-        title="About TerraServe Challenges"
-        subtitle="Real environmental action. Verified volunteer hours. Free for every student."
+        title="About HourQuest"
+        subtitle="Real service. Verified volunteer hours. Free for every student."
       />
       <section className="section-y bg-page">
         <div className="section-container max-w-4xl">
           <Card>
             <h2 className="text-lg font-medium">Our Mission</h2>
             <p className="mt-3 text-sm leading-relaxed text-text-muted">
-              TerraServe Challenges helps students turn everyday environmental action
-              into verified volunteer hours for college applications. Complete real
-              challenges, upload photo proof, and earn certificates you can share
-              with admissions officers — completely free.
+              HourQuest helps students turn everyday environmental and health
+              service into verified volunteer hours for college applications.
+              Complete real challenges, upload photo proof, and earn certificates
+              you can share with admissions officers — completely free.
             </p>
           </Card>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">

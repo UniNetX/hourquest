@@ -32,7 +32,7 @@ export function DashboardNav() {
           href="/"
           className="shrink-0 text-sm font-bold tracking-tight text-primary-dark hover:text-primary"
         >
-          TerraServe
+          HourQuest
         </Link>
 
         <nav

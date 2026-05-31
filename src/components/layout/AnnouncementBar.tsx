@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { IconX } from "@tabler/icons-react";
 
-const STORAGE_KEY = "terraserve-announcement-dismissed";
+const STORAGE_KEY = "hourquest-announcement-dismissed";
 
 export function AnnouncementBar() {
   const [visible, setVisible] = useState(false);
@@ -30,8 +30,8 @@ export function AnnouncementBar() {
   if (!visible) return null;
 
   return (
-    <div className="relative bg-[#153628] px-4 py-2.5 text-center text-sm text-white">
-      <p>
+    <div className="relative bg-primary-dark px-4 py-2.5 pr-12 text-center text-xs leading-snug text-white sm:text-sm">
+      <p className="mx-auto max-w-xl">
         Earn verified volunteer hours for college applications —{" "}
         <Link
           href="/challenges"

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Verify TerraServe Challenges Supabase project is set up.
+ * Verify HourQuest Supabase project is set up.
  * Usage: node scripts/verify-supabase.mjs
  */
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

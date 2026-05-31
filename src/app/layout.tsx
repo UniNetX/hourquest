@@ -1,7 +1,13 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { createMetadata } from "@/lib/seo";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -16,9 +22,9 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = createMetadata({
-  title: "TerraServe Challenges — Earn Verified Volunteer Hours for College Applications",
+  title: "HourQuest — Earn Verified Volunteer Hours for College Applications",
   description:
-    "Complete environmental challenges, upload photo proof, and earn verified volunteer hours with college-ready certificates.",
+    "Complete environmental and medical volunteer challenges, upload photo proof, and earn verified hours with college-ready certificates.",
 });
 
 export default function RootLayout({

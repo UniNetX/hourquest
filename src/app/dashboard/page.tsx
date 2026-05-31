@@ -12,8 +12,8 @@ import { createMetadata } from "@/lib/seo";
 import { format } from "date-fns";
 
 export const metadata = createMetadata({
-  title: "Dashboard — TerraServe Challenges",
-  description: "Your TerraServe Challenges dashboard.",
+  title: "Dashboard — HourQuest",
+  description: "Your HourQuest dashboard.",
   path: "/dashboard",
   noIndex: true,
 });
@@ -52,7 +52,7 @@ export default async function DashboardPage() {
       <div className="space-y-8">
         {hours === 0 && (
           <Card className="border-primary-mid bg-primary-light/40">
-            <h2 className="text-lg font-medium">Welcome to TerraServe Challenges!</h2>
+            <h2 className="text-lg font-medium">Welcome to HourQuest!</h2>
             <p className="mt-2 text-sm text-text-muted">
               Complete your first challenge to start earning verified hours.
             </p>

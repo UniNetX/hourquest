@@ -3,8 +3,8 @@ import { SignInForm } from "@/components/auth/SignInForm";
 import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
-  title: "Sign In — TerraServe Challenges",
-  description: "Sign in to TerraServe Challenges to submit proof and earn verified volunteer hours.",
+  title: "Sign In — HourQuest",
+  description: "Sign in to HourQuest to submit proof and earn verified volunteer hours.",
   path: "/signin",
 });
 

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
-  title: "Leaderboard — TerraServe Challenges",
+  title: "Leaderboard — HourQuest",
   description: "See top students and schools by verified volunteer hours.",
   path: "/leaderboard",
 });

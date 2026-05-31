@@ -5,8 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
-  title: "Student Stories — TerraServe Challenges",
-  description: "Read reviews from students who earned verified volunteer hours with TerraServe.",
+  title: "Student Stories — HourQuest",
+  description: "Read reviews from students who earned verified volunteer hours with HourQuest.",
   path: "/stories",
 });
 
@@ -18,7 +18,7 @@ export default async function StoriesPage() {
         <PageHero
           eyebrow="Stories"
           title="Student Stories"
-          subtitle="Real reviews from students earning verified environmental volunteer hours."
+          subtitle="Real reviews from students earning verified environmental and medical volunteer hours."
         />
         <StoriesPageClient stories={[]} canReview={false} />
       </PublicShell>
@@ -65,7 +65,7 @@ export default async function StoriesPage() {
       <PageHero
         eyebrow="Stories"
         title="Student Stories"
-        subtitle="Real reviews from students earning verified environmental volunteer hours."
+        subtitle="Real reviews from students earning verified environmental and medical volunteer hours."
       />
       <StoriesPageClient stories={enriched} canReview={canReview} />
     </PublicShell>

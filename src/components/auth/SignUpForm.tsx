@@ -70,7 +70,7 @@ export function SignUpForm() {
   return (
     <AuthCard
       title="Create your account"
-      subtitle="Join TerraServe and start earning verified volunteer hours."
+      subtitle="Join HourQuest and start earning verified volunteer hours."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>

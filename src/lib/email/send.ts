@@ -32,7 +32,7 @@ export async function sendChallengeEmail({
       html: `<p>Hi ${data.studentName},</p><p>Your submission for <strong>${data.challengeTitle}</strong> was approved. You earned <strong>${data.hoursEarned}</strong> hours.</p><p>New total: ${data.totalHours} hours.</p><p><a href="${SITE_URL}/dashboard/certificates">View certificates</a></p>`,
     },
     submission_rejected: {
-      subject: "Feedback on your TerraServe submission",
+      subject: "Feedback on your HourQuest submission",
       html: `<p>Your submission for <strong>${data.challengeTitle}</strong> needs improvement.</p><p>Reason: ${data.rejectionReason}</p><p><a href="${SITE_URL}/dashboard/submit">Resubmit</a></p>`,
     },
     certificate_unlocked: {
@@ -40,8 +40,8 @@ export async function sendChallengeEmail({
       html: `<p>Congratulations! You've unlocked your ${data.milestone} hour certificate.</p><p><a href="${SITE_URL}/dashboard/certificates">Download your certificate</a></p>`,
     },
     welcome: {
-      subject: "Welcome to TerraServe Challenges!",
-      html: `<p>Welcome to TerraServe Challenges!</p><p><a href="${SITE_URL}/challenges">Browse challenges</a> to start earning verified hours.</p>`,
+      subject: "Welcome to HourQuest!",
+      html: `<p>Welcome to HourQuest!</p><p><a href="${SITE_URL}/challenges">Browse challenges</a> to start earning verified hours.</p>`,
     },
     admin_new_submission: {
       subject: "New challenge submission pending review",
@@ -51,7 +51,7 @@ export async function sendChallengeEmail({
 
   const template = templates[type];
   await resend.emails.send({
-    from: "TerraServe Challenges <notifications@terraserve.org>",
+    from: "HourQuest <notifications@terraserve.org>",
     to,
     subject: template.subject,
     html: template.html,

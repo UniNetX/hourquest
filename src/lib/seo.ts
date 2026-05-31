@@ -24,7 +24,7 @@ export function createMetadata({
       title,
       description,
       url,
-      siteName: "TerraServe Challenges",
+      siteName: "HourQuest",
       images: [{ url: `${siteUrl}/og-image.svg`, width: 1200, height: 630 }],
       type: "website",
     },

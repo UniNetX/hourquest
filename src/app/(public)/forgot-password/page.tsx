@@ -3,8 +3,8 @@ import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
-  title: "Forgot Password — TerraServe Challenges",
-  description: "Reset your TerraServe Challenges password.",
+  title: "Forgot Password — HourQuest",
+  description: "Reset your HourQuest password.",
   path: "/forgot-password",
 });
 

@@ -55,7 +55,7 @@ export function SignInForm({ next }: { next?: string }) {
 
   return (
     <AuthCard
-      title="Sign in to TerraServe"
+      title="Sign in to HourQuest"
       subtitle="Access your dashboard and submit challenge proof."
     >
       <form onSubmit={handleSubmit} className="space-y-4">

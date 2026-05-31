@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
-  title: "Admin — TerraServe Challenges",
+  title: "Admin — HourQuest",
   description: "Admin dashboard",
   path: "/admin",
   noIndex: true,

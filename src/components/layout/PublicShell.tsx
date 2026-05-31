@@ -28,9 +28,6 @@ export async function PublicShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <a href="#main-content" className="skip-link">
-        Skip to content
-      </a>
       <AnnouncementBar />
       <NavBar user={navUser} />
       <main id="main-content" className="flex-1">

@@ -1,19 +1,52 @@
-import type { ChallengeCategory, ChallengeDifficulty } from "@/types/database";
+import type {
+  ChallengeCategory,
+  ChallengeDifficulty,
+  ChallengeTrack,
+} from "@/types/database";
 
-export const CHALLENGE_CATEGORIES: {
+export type CategoryMeta = {
   id: ChallengeCategory;
   label: string;
   icon: string;
   bg: string;
   color: string;
-}[] = [
-  { id: "cleanup", label: "Clean Up", icon: "trash", bg: "#D8F3DC", color: "#2D6A4F" },
-  { id: "plant", label: "Plant & Grow", icon: "plant", bg: "#E8F5E9", color: "#388E3C" },
-  { id: "waste", label: "Reduce Waste", icon: "recycle", bg: "#FFF8E1", color: "#E65100" },
-  { id: "water", label: "Water & Energy", icon: "droplet", bg: "#E3F2FD", color: "#185FA5" },
-  { id: "social", label: "Social & Awareness", icon: "speakerphone", bg: "#FFF0F5", color: "#993556" },
-  { id: "community", label: "Community", icon: "users", bg: "#F3E8FF", color: "#6B21A8" },
+  track: ChallengeTrack;
+};
+
+export const CHALLENGE_TRACKS: { id: ChallengeTrack; label: string }[] = [
+  { id: "environmental", label: "Environmental" },
+  { id: "medical", label: "Medical" },
 ];
+
+export const ENVIRONMENTAL_CHALLENGE_CATEGORIES: CategoryMeta[] = [
+  { id: "cleanup", label: "Clean Up", icon: "trash", bg: "#D8F3DC", color: "#2D6A4F", track: "environmental" },
+  { id: "plant", label: "Plant & Grow", icon: "plant", bg: "#E8F5E9", color: "#388E3C", track: "environmental" },
+  { id: "waste", label: "Reduce Waste", icon: "recycle", bg: "#FFF8E1", color: "#E65100", track: "environmental" },
+  { id: "water", label: "Water & Energy", icon: "droplet", bg: "#E3F2FD", color: "#185FA5", track: "environmental" },
+  { id: "social", label: "Social & Awareness", icon: "speakerphone", bg: "#FFF0F5", color: "#993556", track: "environmental" },
+  { id: "community", label: "Community", icon: "users", bg: "#F3E8FF", color: "#6B21A8", track: "environmental" },
+];
+
+export const MEDICAL_CHALLENGE_CATEGORIES: CategoryMeta[] = [
+  { id: "health_education", label: "Health Education", icon: "health_education", bg: "#E0E7FF", color: "#4338CA", track: "medical" },
+  { id: "wellness", label: "Wellness & Prevention", icon: "wellness", bg: "#E0F2FE", color: "#0369A1", track: "medical" },
+  { id: "first_aid", label: "First Aid & Safety", icon: "first_aid", bg: "#FFF8E1", color: "#E65100", track: "medical" },
+  { id: "mental_health", label: "Mental Health Awareness", icon: "mental_health", bg: "#FFF0F5", color: "#993556", track: "medical" },
+  { id: "nutrition", label: "Nutrition & Healthy Habits", icon: "nutrition", bg: "#F3E8FF", color: "#6B21A8", track: "medical" },
+  { id: "community_health", label: "Community Health Service", icon: "community_health", bg: "#FCE7F3", color: "#BE185D", track: "medical" },
+];
+
+/** @deprecated Use getCategoriesForTrack or track-specific lists */
+export const CHALLENGE_CATEGORIES = [
+  ...ENVIRONMENTAL_CHALLENGE_CATEGORIES,
+  ...MEDICAL_CHALLENGE_CATEGORIES,
+];
+
+export const DISPLAY_IMPACT_STATS = {
+  hours: 1000,
+  students: 400,
+  challenges: 30,
+} as const;
 
 export const DIFFICULTY_DEFAULTS: Record<
   ChallengeDifficulty,
@@ -48,7 +81,7 @@ export const FAQ_ITEMS = [
       "Once you reach 10, 25, 50, or 100 verified hours, your certificate appears on My Certificates. Click Download PDF to save it for college applications.",
   },
   {
-    question: "Is TerraServe Challenges free?",
+    question: "Is HourQuest free?",
     answer:
       "Yes — completely free for students. No fees, no subscriptions, ever.",
   },
@@ -59,8 +92,18 @@ export const FAQ_ITEMS = [
   },
 ];
 
-export function getCategoryMeta(category: ChallengeCategory) {
+export function getCategoriesForTrack(track: ChallengeTrack): CategoryMeta[] {
+  return track === "medical"
+    ? MEDICAL_CHALLENGE_CATEGORIES
+    : ENVIRONMENTAL_CHALLENGE_CATEGORIES;
+}
+
+export function getCategoryMeta(category: ChallengeCategory): CategoryMeta {
   return CHALLENGE_CATEGORIES.find((c) => c.id === category)!;
+}
+
+export function getTrackForCategory(category: ChallengeCategory): ChallengeTrack {
+  return getCategoryMeta(category).track;
 }
 
 export function getNextMilestone(hours: number): number | null {
@@ -68,4 +111,20 @@ export function getNextMilestone(hours: number): number | null {
     if (hours < m) return m;
   }
   return null;
+}
+
+export function challengeTrack(challenge: { track?: ChallengeTrack | null }): ChallengeTrack {
+  return challenge.track ?? "environmental";
+}
+
+export function displayImpactStats(stats: {
+  hours: number;
+  students: number;
+  challenges: number;
+}) {
+  return {
+    hours: Math.max(stats.hours, DISPLAY_IMPACT_STATS.hours),
+    students: Math.max(stats.students, DISPLAY_IMPACT_STATS.students),
+    challenges: Math.max(stats.challenges, DISPLAY_IMPACT_STATS.challenges),
+  };
 }

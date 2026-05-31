@@ -27,14 +27,17 @@ import { ChallengeCard } from "@/components/challenges/ChallengeCard";
 import { CategoryIcon } from "@/components/challenges/CategoryIcon";
 import { Input, Label, Textarea } from "@/components/ui/Input";
 import {
-  CHALLENGE_CATEGORIES,
+  CHALLENGE_TRACKS,
   DIFFICULTY_DEFAULTS,
+  challengeTrack,
+  getCategoriesForTrack,
 } from "@/lib/challenges/constants";
 import { cn } from "@/lib/utils";
 import type {
   Challenge,
   ChallengeCategory,
   ChallengeDifficulty,
+  ChallengeTrack,
   ChallengeSubmission,
   StudentStory,
 } from "@/types/database";
@@ -132,6 +135,7 @@ export function AdminDashboard({
   const [challenges, setChallenges] = useState(initialChallenges);
   const [stories, setStories] = useState(initialStories);
   const [users, setUsers] = useState(initialUsers);
+  const [trackFilter, setTrackFilter] = useState<ChallengeTrack>("environmental");
   const [categoryFilter, setCategoryFilter] = useState<ChallengeCategory | "all">("all");
   const [activeOnly, setActiveOnly] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -149,7 +153,7 @@ export function AdminDashboard({
     const supabase = createClient();
     const [subs, chals, sts, profs] = await Promise.all([
       supabase.from("challenge_submissions").select("*").order("submitted_at", { ascending: false }),
-      supabase.from("challenges").select("*").order("category").order("sort_order"),
+      supabase.from("challenges").select("*").order("track").order("category").order("sort_order"),
       supabase.from("student_stories").select("*").order("submitted_at", { ascending: false }),
       supabase.from("profiles").select("id, full_name, school_name, total_verified_hours, created_at").order("created_at", { ascending: false }).limit(100),
     ]);
@@ -172,10 +176,14 @@ export function AdminDashboard({
 
   async function saveChallenge() {
     if (!editing?.title || !editing.category || !editing.difficulty) return;
+    const payload = {
+      ...editing,
+      track: editing.track ?? challengeTrack(editing as Challenge),
+    };
     const res = await fetch("/api/admin/challenges", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ payload: editing }),
+      body: JSON.stringify({ payload }),
     });
     if (!res.ok) {
       const body = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -219,11 +227,12 @@ export function AdminDashboard({
 
   const filteredChallenges = useMemo(() => {
     return challenges.filter((c) => {
+      if (challengeTrack(c) !== trackFilter) return false;
       if (categoryFilter !== "all" && c.category !== categoryFilter) return false;
       if (activeOnly && !c.active) return false;
       return true;
     });
-  }, [challenges, categoryFilter, activeOnly]);
+  }, [challenges, categoryFilter, activeOnly, trackFilter]);
 
   const filteredUsers = users.filter(
     (u) =>
@@ -244,6 +253,7 @@ export function AdminDashboard({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        track: trackFilter,
         category,
         orderedIds: reordered.map((c) => c.id),
       }),
@@ -259,7 +269,7 @@ export function AdminDashboard({
         <div className="section-container flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="text-sm font-medium text-white/80 hover:text-white">
-              ← TerraServe
+              ← HourQuest
             </Link>
             <span className="text-white/30">|</span>
             <span className="text-base font-medium">Admin</span>
@@ -344,55 +354,77 @@ export function AdminDashboard({
 
         {tab === "challenges" && (
           <div>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="mb-4 flex flex-col gap-3">
               <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCategoryFilter("all")}
-                  className={cn(
-                    "rounded-full px-3 py-1 text-[12px]",
-                    categoryFilter === "all" ? "bg-primary text-white" : "border border-border",
-                  )}
-                >
-                  All
-                </button>
-                {CHALLENGE_CATEGORIES.map((cat) => (
+                {CHALLENGE_TRACKS.map((t) => (
                   <button
-                    key={cat.id}
+                    key={t.id}
                     type="button"
-                    onClick={() => setCategoryFilter(cat.id)}
+                    onClick={() => {
+                      setTrackFilter(t.id);
+                      setCategoryFilter("all");
+                    }}
                     className={cn(
                       "rounded-full px-3 py-1 text-[12px]",
-                      categoryFilter === cat.id ? "bg-primary text-white" : "border border-border",
+                      trackFilter === t.id ? "bg-primary text-white" : "border border-border",
                     )}
                   >
-                    {cat.label}
+                    {t.label}
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-3">
-                <label className="flex items-center gap-2 text-[12px]">
-                  <input
-                    type="checkbox"
-                    checked={activeOnly}
-                    onChange={(e) => setActiveOnly(e.target.checked)}
-                  />
-                  Active Only
-                </label>
-                <Button
-                  onClick={() => {
-                    setEditing({
-                      active: true,
-                      hours_earned: 0.5,
-                      points: 50,
-                      difficulty: "easy",
-                      category: "cleanup",
-                    });
-                    setPanelOpen(true);
-                  }}
-                >
-                  Add New Challenge
-                </Button>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCategoryFilter("all")}
+                    className={cn(
+                      "rounded-full px-3 py-1 text-[12px]",
+                      categoryFilter === "all" ? "bg-primary text-white" : "border border-border",
+                    )}
+                  >
+                    All
+                  </button>
+                  {getCategoriesForTrack(trackFilter).map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setCategoryFilter(cat.id)}
+                      className={cn(
+                        "rounded-full px-3 py-1 text-[12px]",
+                        categoryFilter === cat.id ? "bg-primary text-white" : "border border-border",
+                      )}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-[12px]">
+                    <input
+                      type="checkbox"
+                      checked={activeOnly}
+                      onChange={(e) => setActiveOnly(e.target.checked)}
+                    />
+                    Active Only
+                  </label>
+                  <Button
+                    onClick={() => {
+                      const defaultCategory = getCategoriesForTrack(trackFilter)[0]?.id ?? "cleanup";
+                      setEditing({
+                        active: true,
+                        hours_earned: 0.5,
+                        points: 50,
+                        difficulty: "easy",
+                        track: trackFilter,
+                        category: defaultCategory,
+                      });
+                      setPanelOpen(true);
+                    }}
+                  >
+                    Add New Challenge
+                  </Button>
+                </div>
               </div>
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
@@ -531,6 +563,31 @@ export function AdminDashboard({
                 />
               </div>
               <div>
+                <Label>Track</Label>
+                <select
+                  className="h-[40px] w-full rounded-[10px] border px-3 text-[13px]"
+                  value={editing.track ?? trackFilter}
+                  onChange={(e) => {
+                    const nextTrack = e.target.value as ChallengeTrack;
+                    const cats = getCategoriesForTrack(nextTrack);
+                    const nextCategory = cats.some((c) => c.id === editing.category)
+                      ? editing.category!
+                      : cats[0]?.id ?? "cleanup";
+                    setEditing({
+                      ...editing,
+                      track: nextTrack,
+                      category: nextCategory as ChallengeCategory,
+                    });
+                  }}
+                >
+                  {CHALLENGE_TRACKS.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <Label>Category</Label>
                 <select
                   className="h-[40px] w-full rounded-[10px] border px-3 text-[13px]"
@@ -542,7 +599,9 @@ export function AdminDashboard({
                     })
                   }
                 >
-                  {CHALLENGE_CATEGORIES.map((c) => (
+                  {getCategoriesForTrack(
+                    (editing.track ?? trackFilter) as ChallengeTrack,
+                  ).map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.label}
                     </option>

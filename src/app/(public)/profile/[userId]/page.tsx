@@ -24,8 +24,8 @@ export async function generateMetadata({
     : null;
 
   return createMetadata({
-    title: `${profile?.full_name ?? "Student"} — TerraServe Profile`,
-    description: "Verified TerraServe member profile.",
+    title: `${profile?.full_name ?? "Student"} — HourQuest Profile`,
+    description: "Verified HourQuest member profile.",
     path: `/profile/${userId}`,
   });
 }

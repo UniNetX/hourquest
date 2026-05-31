@@ -1,16 +1,32 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChallengeCard } from "@/components/challenges/ChallengeCard";
 import { PageHero } from "@/components/layout/PageHero";
 import { cn } from "@/lib/utils";
-import { CHALLENGE_CATEGORIES } from "@/lib/challenges/constants";
+import {
+  CHALLENGE_TRACKS,
+  challengeTrack,
+  getCategoriesForTrack,
+} from "@/lib/challenges/constants";
 import { createClient } from "@/lib/supabase/client";
-import type { Challenge, ChallengeCategory } from "@/types/database";
+import type { Challenge, ChallengeCategory, ChallengeTrack } from "@/types/database";
 
 const filterBtn =
   "rounded-sm border px-4 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2";
+
+type TrackFilter = ChallengeTrack | "all";
+
+const TRACK_FILTERS: { id: TrackFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  ...CHALLENGE_TRACKS,
+];
+
+function parseTrack(value: string | null): TrackFilter {
+  if (value === "medical" || value === "environmental") return value;
+  return "all";
+}
 
 export function ChallengeCatalog({
   initialChallenges,
@@ -20,11 +36,63 @@ export function ChallengeCatalog({
   isLoggedIn: boolean;
 }) {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [challenges, setChallenges] =
     useState<Challenge[]>(initialChallenges);
-  const [category, setCategory] = useState<ChallengeCategory | "all">(
-    (searchParams.get("category") as ChallengeCategory) || "all",
+  const [track, setTrack] = useState<TrackFilter>(() =>
+    parseTrack(searchParams.get("track")),
   );
+  const [category, setCategory] = useState<ChallengeCategory | "all">(() => {
+    const raw = searchParams.get("category") as ChallengeCategory | null;
+    const initialTrack = parseTrack(searchParams.get("track"));
+    if (!raw || initialTrack === "all") return "all";
+    const valid = getCategoriesForTrack(initialTrack).some((c) => c.id === raw);
+    return valid ? raw : "all";
+  });
+
+  useEffect(() => {
+    const nextTrack = parseTrack(searchParams.get("track"));
+    setTrack(nextTrack);
+    const raw = searchParams.get("category") as ChallengeCategory | null;
+    if (!raw || nextTrack === "all") {
+      setCategory("all");
+      return;
+    }
+    const valid = getCategoriesForTrack(nextTrack).some((c) => c.id === raw);
+    setCategory(valid ? raw : "all");
+  }, [searchParams]);
+
+  function updateFilters(nextTrack: TrackFilter, nextCategory: ChallengeCategory | "all") {
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextTrack === "all") {
+      params.delete("track");
+    } else {
+      params.set("track", nextTrack);
+    }
+    if (nextCategory === "all" || nextTrack === "all") {
+      params.delete("category");
+    } else {
+      params.set("category", nextCategory);
+    }
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    setTrack(nextTrack);
+    setCategory(nextTrack === "all" ? "all" : nextCategory);
+  }
+
+  function onTrackChange(nextTrack: TrackFilter) {
+    if (nextTrack === "all") {
+      updateFilters("all", "all");
+      return;
+    }
+    const categories = getCategoriesForTrack(nextTrack);
+    const nextCategory =
+      category === "all" || categories.some((c) => c.id === category)
+        ? category
+        : "all";
+    updateFilters(nextTrack, nextCategory);
+  }
 
   useEffect(() => {
     const supabase = createClient();
@@ -38,9 +106,10 @@ export function ChallengeCatalog({
             .from("challenges")
             .select("*")
             .eq("active", true)
+            .order("track")
             .order("category")
             .order("sort_order");
-          if (data) setChallenges(data);
+          if (data) setChallenges(data as Challenge[]);
         },
       )
       .subscribe();
@@ -50,16 +119,22 @@ export function ChallengeCatalog({
     };
   }, []);
 
+  const trackCategories =
+    track === "all" ? [] : getCategoriesForTrack(track);
+
   const filtered = useMemo(() => {
-    const list =
-      category === "all"
-        ? challenges
-        : challenges.filter((c) => c.category === category);
+    const list = challenges.filter((c) => {
+      if (track !== "all" && challengeTrack(c) !== track) return false;
+      if (category !== "all" && c.category !== category) return false;
+      return true;
+    });
     return list.sort(
       (a, b) =>
-        a.category.localeCompare(b.category) || a.sort_order - b.sort_order,
+        challengeTrack(a).localeCompare(challengeTrack(b)) ||
+        a.category.localeCompare(b.category) ||
+        a.sort_order - b.sort_order,
     );
-  }, [category, challenges]);
+  }, [category, challenges, track]);
 
   const startHref = (id: string) =>
     isLoggedIn
@@ -69,46 +144,75 @@ export function ChallengeCatalog({
   return (
     <>
       <PageHero
-        eyebrow="Challenges"
         title="Challenge Catalog"
-        subtitle="Browse all environmental challenges and start earning verified hours."
+        subtitle="Browse environmental and medical challenges and start earning verified hours."
         large
       />
       <section className="section-y bg-page">
         <div className="section-container">
-          <div className="mb-8 flex flex-wrap gap-2" role="tablist" aria-label="Category filter">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={category === "all"}
-              onClick={() => setCategory("all")}
-              className={cn(
-                filterBtn,
-                category === "all"
-                  ? "border-primary bg-primary text-white"
-                  : "border-border bg-surface text-text-muted hover:text-text",
-              )}
-            >
-              All
-            </button>
-            {CHALLENGE_CATEGORIES.map((cat) => (
+          <div
+            className="filter-scroll mb-4 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:p-0"
+            role="tablist"
+            aria-label="Challenge track"
+          >
+            {TRACK_FILTERS.map((t) => (
               <button
-                key={cat.id}
+                key={t.id}
                 type="button"
                 role="tab"
-                aria-selected={category === cat.id}
-                onClick={() => setCategory(cat.id)}
+                aria-selected={track === t.id}
+                onClick={() => onTrackChange(t.id)}
                 className={cn(
                   filterBtn,
-                  category === cat.id
+                  track === t.id
                     ? "border-primary bg-primary text-white"
                     : "border-border bg-surface text-text-muted hover:text-text",
                 )}
               >
-                {cat.label}
+                {t.label}
               </button>
             ))}
           </div>
+          {track !== "all" && (
+            <div
+              className="filter-scroll mb-8 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:p-0"
+              role="tablist"
+              aria-label="Category filter"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={category === "all"}
+                onClick={() => updateFilters(track, "all")}
+                className={cn(
+                  filterBtn,
+                  category === "all"
+                    ? "border-primary bg-primary text-white"
+                    : "border-border bg-surface text-text-muted hover:text-text",
+                )}
+              >
+                All
+              </button>
+              {trackCategories.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={category === cat.id}
+                  onClick={() => updateFilters(track, cat.id)}
+                  className={cn(
+                    filterBtn,
+                    category === cat.id
+                      ? "border-primary bg-primary text-white"
+                      : "border-border bg-surface text-text-muted hover:text-text",
+                  )}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {track === "all" && <div className="mb-8" />}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((challenge) => (
               <ChallengeCard

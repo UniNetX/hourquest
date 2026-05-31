@@ -17,7 +17,7 @@ export function FeaturedChallengesSection({
         <SectionHeader
           eyebrow="Featured"
           title="Featured Challenges"
-          subtitle="Start with these popular challenges at every difficulty level."
+          subtitle="Environmental and medical challenges to get started — one pick from each track."
         />
         <div className="grid gap-4 md:grid-cols-3">
           {challenges.map((challenge) => (

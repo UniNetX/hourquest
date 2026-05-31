@@ -11,6 +11,7 @@ const links = [
   { href: "/", label: "Home" },
   { href: "/challenges", label: "Challenges" },
   { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/terraserve-app", label: "TerraServe iOS" },
   { href: "/about", label: "About" },
   { href: "/partnership", label: "Partnership" },
   { href: "/faq", label: "FAQ" },
@@ -28,17 +29,26 @@ export function NavBar({
     setOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   return (
     <header
       data-site-nav
-      className="site-nav sticky top-0 z-50 shadow-nav"
+      className="site-nav sticky top-0 z-50 shadow-nav pt-[env(safe-area-inset-top,0px)]"
     >
       <div className="section-container flex h-16 items-center justify-between gap-4">
         <Link
           href="/"
           className="shrink-0 text-base font-bold tracking-tight text-primary-dark hover:text-primary"
         >
-          TerraServe
+          HourQuest
         </Link>
 
         <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Main">
@@ -104,7 +114,7 @@ export function NavBar({
             aria-label="Close menu"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute left-0 right-0 top-full z-50 border-b border-border bg-page/95 px-4 py-4 shadow-lg backdrop-blur-md lg:hidden">
+          <div className="absolute left-0 right-0 top-full z-50 max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain border-b border-border bg-page/95 px-4 py-4 shadow-lg backdrop-blur-md lg:hidden">
             <nav className="flex flex-col gap-0.5" aria-label="Mobile">
               {links.map((link) => {
                 const active = pathname === link.href;

@@ -60,13 +60,13 @@ export function LeaderboardView({
       <PageHero
         eyebrow="Rankings"
         title="Leaderboard"
-        subtitle="See who's leading in verified environmental volunteer hours."
+        subtitle="See who's leading in verified environmental and medical volunteer hours."
         large
       />
       <section className="section-y bg-page">
         <div className="section-container max-w-3xl">
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex gap-2" role="tablist" aria-label="Leaderboard type">
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            <div className="filter-scroll sm:mx-0 sm:overflow-visible sm:p-0" role="tablist" aria-label="Leaderboard type">
               {(["individual", "schools"] as const).map((key) => (
                 <button
                   key={key}
@@ -86,7 +86,7 @@ export function LeaderboardView({
               ))}
             </div>
             {type === "individual" && (
-              <div className="flex gap-2" role="tablist" aria-label="Time period">
+              <div className="filter-scroll sm:mx-0 sm:overflow-visible sm:p-0" role="tablist" aria-label="Time period">
                 {(["week", "all"] as const).map((key) => (
                   <button
                     key={key}

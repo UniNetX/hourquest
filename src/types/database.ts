@@ -1,10 +1,24 @@
-export type ChallengeCategory =
+export type ChallengeTrack = "environmental" | "medical";
+
+export type EnvironmentalChallengeCategory =
   | "cleanup"
   | "plant"
   | "waste"
   | "water"
   | "social"
   | "community";
+
+export type MedicalChallengeCategory =
+  | "health_education"
+  | "wellness"
+  | "first_aid"
+  | "mental_health"
+  | "nutrition"
+  | "community_health";
+
+export type ChallengeCategory =
+  | EnvironmentalChallengeCategory
+  | MedicalChallengeCategory;
 
 export type ChallengeDifficulty = "easy" | "medium" | "hard";
 
@@ -15,6 +29,7 @@ export interface Challenge {
   title: string;
   description: string;
   proof_instructions: string | null;
+  track: ChallengeTrack;
   category: ChallengeCategory;
   difficulty: ChallengeDifficulty;
   hours_earned: number;
@@ -169,7 +184,7 @@ export type Database = {
         Returns: Challenge;
       };
       admin_reorder_challenges: {
-        Args: { p_category: string; p_ordered_ids: string[] };
+        Args: { p_track: string; p_category: string; p_ordered_ids: string[] };
         Returns: void;
       };
       admin_delete_challenge: {

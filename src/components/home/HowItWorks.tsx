@@ -10,7 +10,7 @@ const steps = [
   {
     step: "2",
     title: "Complete It",
-    description: "Do the environmental task in your community — cleanup, planting, and more.",
+    description: "Complete the challenge in your community — environmental action, health education, and more.",
   },
   {
     step: "3",

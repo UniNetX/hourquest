@@ -8,7 +8,11 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FieldError, Input, Label, Textarea } from "@/components/ui/Input";
 import type { Challenge } from "@/types/database";
-import { CHALLENGE_CATEGORIES } from "@/lib/challenges/constants";
+import {
+  CHALLENGE_TRACKS,
+  challengeTrack,
+  getCategoryMeta,
+} from "@/lib/challenges/constants";
 
 export default function SubmitChallengeClient({
   initialChallenges,
@@ -44,6 +48,7 @@ export default function SubmitChallengeClient({
         .from("challenges")
         .select("*")
         .eq("active", true)
+        .order("track")
         .order("category")
         .order("sort_order");
       if (loadError) {
@@ -135,13 +140,13 @@ export default function SubmitChallengeClient({
                 required
               >
                 <option value="">Select a challenge</option>
-                {CHALLENGE_CATEGORIES.map((cat) => (
-                  <optgroup key={cat.id} label={cat.label}>
+                {CHALLENGE_TRACKS.map((track) => (
+                  <optgroup key={track.id} label={track.label}>
                     {challenges
-                      .filter((c) => c.category === cat.id)
+                      .filter((c) => challengeTrack(c) === track.id)
                       .map((c) => (
                         <option key={c.id} value={c.id}>
-                          {c.title}
+                          {getCategoryMeta(c.category).label}: {c.title}
                         </option>
                       ))}
                   </optgroup>

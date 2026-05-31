@@ -23,12 +23,12 @@ export function CtaBand({
             <h2 className="font-display text-primary-dark">{title}</h2>
             {subtitle && <p>{subtitle}</p>}
           </div>
-          <div className="join-panel__cta flex flex-wrap justify-center gap-3 border-t-0 pt-0">
-            <Button href={primaryHref} variant="primary" size="lg">
+          <div className="join-panel__cta flex flex-col items-stretch gap-3 border-t-0 pt-0 sm:flex-row sm:flex-wrap sm:justify-center sm:items-center">
+            <Button href={primaryHref} variant="primary" size="lg" className="w-full sm:w-auto">
               {primaryLabel}
             </Button>
             {secondaryLabel && secondaryHref && (
-              <Button href={secondaryHref} variant="secondary" size="lg">
+              <Button href={secondaryHref} variant="secondary" size="lg" className="w-full sm:w-auto">
                 {secondaryLabel}
               </Button>
             )}

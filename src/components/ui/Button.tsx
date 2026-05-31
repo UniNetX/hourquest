@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 const variants = {
   primary:
     "bg-primary text-white border border-primary hover:bg-primary-dark btn-on-dark",
+  cta: "bg-cta text-white border border-cta hover:bg-cta-hover",
   secondary:
     "bg-surface text-primary-dark border border-border hover:bg-primary-light/50",
   danger: "bg-error text-white border border-transparent hover:bg-[#c62828] btn-on-dark",
@@ -12,13 +13,15 @@ const variants = {
   navCta: "bg-primary-mid text-white border border-transparent hover:bg-primary btn-on-dark",
   white: "bg-white text-primary-dark border border-border hover:bg-primary-light/30",
   outlineWhite: "btn-on-dark-outline",
+  outlineDark:
+    "bg-white/90 text-primary-dark border border-primary-dark/20 hover:bg-white shadow-sm",
   ghostOnDark: "btn-on-dark-outline border-transparent hover:bg-white/10",
 } as const;
 
 const sizes = {
-  sm: "px-4 py-2 text-sm rounded-sm",
-  md: "px-5 py-2.5 text-sm rounded-sm",
-  lg: "px-6 py-3 text-base rounded-sm",
+  sm: "min-h-10 px-4 py-2 text-sm rounded-sm",
+  md: "min-h-11 px-5 py-2.5 text-sm rounded-sm",
+  lg: "min-h-12 px-6 py-3 text-base rounded-sm",
 } as const;
 
 type Variant = keyof typeof variants;
@@ -34,6 +37,7 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const darkBgVariants = new Set<Variant>([
   "primary",
+  "cta",
   "danger",
   "navCta",
   "outlineWhite",

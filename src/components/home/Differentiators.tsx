@@ -32,7 +32,7 @@ const features = [
     tag: "Platform",
     title: "Also on the App",
     description:
-      "Hours from the TerraServe app count toward the same certificates.",
+      "Hours from the HourQuest app count toward the same certificates.",
     Icon: IconDeviceMobile,
   },
 ];
@@ -42,9 +42,9 @@ export function Differentiators() {
     <section className="section-y bg-page">
       <div className="section-container">
         <SectionHeader
-          eyebrow="Why TerraServe"
+          eyebrow="Why HourQuest"
           title="What Makes Us Different"
-          subtitle="Real environmental action with credentials admissions officers trust."
+          subtitle="Real environmental and health service with credentials admissions officers trust."
         />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {features.map(({ tag, title, description, Icon }) => (

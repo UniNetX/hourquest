@@ -8,7 +8,7 @@ export function PageHero({
   eyebrow,
   children,
   large,
-  variant = "gradient",
+  variant = "default",
   imageSrc,
 }: {
   title: string;
@@ -16,7 +16,7 @@ export function PageHero({
   eyebrow?: string;
   children?: ReactNode;
   large?: boolean;
-  variant?: "gradient" | "photo";
+  variant?: "default" | "photo";
   imageSrc?: string;
 }) {
   if (variant === "photo" && imageSrc) {
@@ -35,10 +35,7 @@ export function PageHero({
           sizes="100vw"
           priority
         />
-        <div
-          className="absolute inset-0 bg-gradient-to-b from-primary-dark/70 via-primary-dark/40 to-primary-dark/85"
-          aria-hidden
-        />
+        <div className="absolute inset-0 bg-primary-dark/70" aria-hidden />
         <div
           className={cn(
             "relative z-10 section-container text-center text-white",
@@ -61,7 +58,7 @@ export function PageHero({
             {title}
           </h1>
           {subtitle && (
-            <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-white/90">
+            <p className="mx-auto mt-4 max-w-2xl px-1 text-sm leading-relaxed text-white/90 sm:text-base">
               {subtitle}
             </p>
           )}
@@ -77,8 +74,8 @@ export function PageHero({
         {eyebrow && <p className="eyebrow">{eyebrow}</p>}
         <h1
           className={cn(
-            "font-display",
-            large && "text-[2rem] md:text-[2.5rem]",
+            "font-display text-[1.65rem] sm:text-[2rem]",
+            large && "md:text-[2.5rem]",
           )}
         >
           {title}

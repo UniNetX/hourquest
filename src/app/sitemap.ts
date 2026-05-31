@@ -9,6 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/about",
     "/partnership",
     "/faq",
+    "/terraserve-app",
     "/download",
     "/stories",
     "/signin",

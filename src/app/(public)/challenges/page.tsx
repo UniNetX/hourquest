@@ -5,8 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
-  title: "Environmental Volunteer Challenges — TerraServe Challenges",
-  description: "Browse 30+ environmental volunteer challenges and earn verified hours.",
+  title: "Volunteer Challenges — HourQuest",
+  description:
+    "Browse environmental and medical volunteer challenges and earn verified hours.",
   path: "/challenges",
 });
 
@@ -18,6 +19,7 @@ export default async function ChallengesPage() {
           .from("challenges")
           .select("*")
           .eq("active", true)
+          .order("track")
           .order("category")
           .order("sort_order")
       : Promise.resolve({ data: [] }),

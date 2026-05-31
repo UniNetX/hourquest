@@ -1,7 +1,11 @@
 import {
+  IconApple,
   IconDroplet,
+  IconFirstAidKit,
+  IconHeart,
   IconPlant,
   IconRecycle,
+  IconSchool,
   IconSpeakerphone,
   IconTrash,
   IconUsers,
@@ -16,6 +20,12 @@ const icons = {
   droplet: IconDroplet,
   speakerphone: IconSpeakerphone,
   users: IconUsers,
+  health_education: IconSchool,
+  wellness: IconHeart,
+  first_aid: IconFirstAidKit,
+  mental_health: IconHeart,
+  nutrition: IconApple,
+  community_health: IconUsers,
 } as const;
 
 export function CategoryIcon({

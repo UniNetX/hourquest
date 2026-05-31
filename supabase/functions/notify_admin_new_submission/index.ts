@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "TerraServe Challenges <notifications@terraserve.org>",
+          from: "HourQuest <notifications@terraserve.org>",
           to: email.trim(),
           subject: "New challenge submission pending review",
           html: `<p>New submission: <strong>${submission.challenge_title}</strong></p>`,

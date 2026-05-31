@@ -22,7 +22,7 @@ const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL;
 
 export function Footer() {
   return (
-    <footer className="site-footer">
+    <footer className="site-footer pb-[env(safe-area-inset-bottom,0px)]">
       <div className="section-container py-12 sm:py-14">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-12">
           <div className="lg:col-span-5">
@@ -30,12 +30,12 @@ export function Footer() {
               href="/"
               className="text-base font-bold tracking-tight text-primary-dark hover:text-primary"
             >
-              TerraServe
+              HourQuest
             </Link>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-text-muted">
-              Complete environmental challenges, upload photo proof, and earn
-              verified volunteer hours for college applications — completely
-              free.
+              Complete environmental and medical volunteer challenges, upload
+              photo proof, and earn verified hours for college applications —
+              completely free.
             </p>
           </div>
 
@@ -100,7 +100,7 @@ export function Footer() {
 
         <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-rule pt-8 sm:flex-row">
           <p className="text-xs text-text-muted">
-            © {new Date().getFullYear()} TerraServe. All rights reserved.
+            © {new Date().getFullYear()} HourQuest. All rights reserved.
           </p>
           <div className="flex gap-4">
             <Link

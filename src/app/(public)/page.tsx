@@ -1,12 +1,12 @@
 import { PublicShell } from "@/components/layout/PublicShell";
 import { CtaBand } from "@/components/marketing/CtaBand";
 import { DualCtaPanel } from "@/components/marketing/DualCtaPanel";
-import { Marquee } from "@/components/marketing/Marquee";
 import { ChallengeCategoriesSection } from "@/components/home/ChallengeCategoriesSection";
 import { Differentiators } from "@/components/home/Differentiators";
 import { FeaturedChallengesSection } from "@/components/home/FeaturedChallengesSection";
 import { HomeHero } from "@/components/home/HomeHero";
 import { HowItWorks } from "@/components/home/HowItWorks";
+import { TerraServeAppSection } from "@/components/home/TerraServeAppSection";
 import { ImpactStats } from "@/components/home/ImpactStats";
 import { LeaderboardPreview } from "@/components/home/LeaderboardPreview";
 import { ReviewCarousel } from "@/components/home/ReviewCarousel";
@@ -17,9 +17,9 @@ import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
   title:
-    "TerraServe Challenges — Earn Verified Volunteer Hours for College Applications",
+    "HourQuest — Earn Verified Volunteer Hours for College Applications",
   description:
-    "Complete environmental challenges, upload photo proof, and earn verified volunteer hours with college-ready certificates.",
+    "Complete environmental and medical volunteer challenges, upload photo proof, and earn verified hours with college-ready certificates.",
 });
 
 async function getHomeData() {
@@ -29,7 +29,6 @@ async function getHomeData() {
     stats: { hours: 0, students: 0, challenges: 30 },
     leaderboard: [],
     stories: [],
-    schools: [] as string[],
     user: null,
   };
 
@@ -37,7 +36,7 @@ async function getHomeData() {
     return empty;
   }
 
-  const [challengesRes, statsRes, leaderboardRes, storiesRes, userRes, schoolsRes] =
+  const [challengesRes, statsRes, leaderboardRes, storiesRes, userRes] =
     await Promise.all([
       supabase
         .from("challenges")
@@ -57,11 +56,6 @@ async function getHomeData() {
         .order("submitted_at", { ascending: false })
         .limit(6),
       supabase.auth.getUser(),
-      supabase
-        .from("profiles")
-        .select("school_name")
-        .not("school_name", "is", null)
-        .limit(50),
     ]);
 
   const hours =
@@ -71,21 +65,20 @@ async function getHomeData() {
     ) ?? 0;
 
   const allChallenges = (challengesRes.data ?? []) as Challenge[];
-  const featured = allChallenges
-    .filter((c) => ["easy", "medium", "hard"].includes(c.difficulty))
-    .reduce((acc, c) => {
-      if (!acc.find((x) => x.difficulty === c.difficulty)) acc.push(c);
-      return acc;
-    }, [] as Challenge[])
-    .slice(0, 3);
-
-  const schoolNames = [
-    ...new Set(
-      (schoolsRes.data ?? [])
-        .map((p) => p.school_name?.trim())
-        .filter((s): s is string => Boolean(s)),
-    ),
-  ].slice(0, 30);
+  const trackOf = (c: Challenge) => c.track ?? "environmental";
+  const featured: Challenge[] = [];
+  for (const track of ["environmental", "medical"] as const) {
+    const pick = allChallenges.find(
+      (c) => trackOf(c) === track && c.difficulty === "easy",
+    );
+    if (pick) featured.push(pick);
+  }
+  if (featured.length < 3) {
+    for (const c of allChallenges) {
+      if (featured.length >= 3) break;
+      if (!featured.find((f) => f.id === c.id)) featured.push(c);
+    }
+  }
 
   return {
     featured: featured ?? [],
@@ -96,14 +89,12 @@ async function getHomeData() {
     },
     leaderboard: leaderboardRes.data ?? [],
     stories: storiesRes.data ?? [],
-    schools: schoolNames,
     user: userRes.data.user,
   };
 }
 
 export default async function HomePage() {
-  const { featured, stats, leaderboard, stories, schools, user } =
-    await getHomeData();
+  const { featured, stats, leaderboard, stories, user } = await getHomeData();
   const startHref = (id: string) =>
     user
       ? `/dashboard/submit?challengeId=${id}`
@@ -111,19 +102,19 @@ export default async function HomePage() {
 
   return (
     <PublicShell>
-      <HomeHero stats={stats} />
-      {schools.length > 0 && <Marquee items={schools} />}
+      <HomeHero />
       <ImpactStats stats={stats} />
       <HowItWorks />
+      <TerraServeAppSection />
       <ChallengeCategoriesSection />
       <FeaturedChallengesSection challenges={featured} startHref={startHref} />
       <DualCtaPanel
         title="How Can We Help You?"
-        subtitle="Whether you want to earn hours or bring TerraServe to your school, we have a path for you."
+        subtitle="Whether you want to earn hours or bring HourQuest to your school, we have a path for you."
         left={{
           title: "Start Earning Hours",
           description:
-            "Pick a challenge, complete real environmental action, and earn verified volunteer hours for college applications.",
+            "Pick environmental or medical challenges, complete real service in your community, and earn verified volunteer hours for college applications.",
           bullets: [
             "Completely free",
             "Photo proof review",
@@ -136,7 +127,7 @@ export default async function HomePage() {
         right={{
           title: "Partner With Us",
           description:
-            "Bring TerraServe Challenges to your school or organization and help students earn verified environmental service hours.",
+            "Bring HourQuest to your school or organization and help students earn verified environmental and health service hours.",
           bullets: [
             "School & club partnerships",
             "Bulk student onboarding",
@@ -152,7 +143,7 @@ export default async function HomePage() {
           <SectionHeader
             eyebrow="Leaderboard"
             title="Top Students"
-            subtitle="See who's leading the way in verified environmental action."
+            subtitle="See who's leading the way in verified environmental and medical service."
           />
           <LeaderboardPreview initialData={leaderboard} />
         </div>
@@ -163,7 +154,7 @@ export default async function HomePage() {
             <SectionHeader
               eyebrow="Stories"
               title="What Students Are Saying"
-              subtitle="Hear from students who have earned verified hours with TerraServe."
+              subtitle="Hear from students who have earned verified hours with HourQuest."
             />
             <ReviewCarousel stories={stories as never[]} />
           </div>
@@ -171,7 +162,7 @@ export default async function HomePage() {
       )}
       <CtaBand
         title="Ready to Get Started?"
-        subtitle="Join students earning verified volunteer hours through real environmental action."
+        subtitle="Join students earning verified volunteer hours through real environmental and health service."
         primaryLabel="Start a Challenge"
         primaryHref="/challenges"
         secondaryLabel="Create Free Account"

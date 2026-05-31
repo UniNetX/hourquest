@@ -4,8 +4,8 @@ import { FaqAccordion } from "@/components/faq/FaqAccordion";
 import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
-  title: "FAQ — TerraServe Challenges",
-  description: "Frequently asked questions about TerraServe Challenges and verified volunteer hours.",
+  title: "FAQ — HourQuest",
+  description: "Frequently asked questions about HourQuest and verified volunteer hours.",
   path: "/faq",
 });
 
@@ -15,7 +15,7 @@ export default function FaqPage() {
       <PageHero
         eyebrow="Support"
         title="Frequently Asked Questions"
-        subtitle="Answers to common questions about TerraServe Challenges."
+        subtitle="Answers to common questions about HourQuest."
       />
       <section className="section-y bg-page">
         <div className="section-container">

@@ -4,7 +4,7 @@ import { SubmissionsList } from "@/components/dashboard/SubmissionsList";
 import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
-  title: "My Submissions — TerraServe Challenges",
+  title: "My Submissions — HourQuest",
   description: "Track your challenge submission status.",
   path: "/dashboard/submissions",
   noIndex: true,
