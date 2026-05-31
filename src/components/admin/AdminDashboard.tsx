@@ -172,11 +172,16 @@ export function AdminDashboard({
 
   async function saveChallenge() {
     if (!editing?.title || !editing.category || !editing.difficulty) return;
-    await fetch("/api/admin/challenges", {
+    const res = await fetch("/api/admin/challenges", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ payload: editing }),
     });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      alert(body?.error ?? "Failed to save challenge. Check that admin database functions are installed.");
+      return;
+    }
     setPanelOpen(false);
     setEditing(null);
     loadData();

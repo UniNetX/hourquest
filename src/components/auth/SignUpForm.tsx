@@ -14,27 +14,57 @@ export function SignUpForm() {
   const [school, setSchool] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const supabase = createClient();
-    const { error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName, school_name: school },
-      },
-    });
-    setLoading(false);
-    if (signUpError) {
-      setError(signUpError.message);
-      return;
+    setSuccess(null);
+
+    try {
+      let supabase;
+      try {
+        supabase = createClient();
+      } catch {
+        setError(
+          "Account creation is unavailable — site configuration is incomplete. Please try again later.",
+        );
+        return;
+      }
+
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName, school_name: school },
+        },
+      });
+
+      if (signUpError) {
+        setError(signUpError.message);
+        return;
+      }
+
+      if (!data.session) {
+        setSuccess(
+          "Account created! Check your email to confirm your address, then sign in.",
+        );
+        return;
+      }
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.",
+      );
+    } finally {
+      setLoading(false);
     }
-    router.push("/dashboard");
-    router.refresh();
   }
 
   return (
@@ -82,6 +112,11 @@ export function SignUpForm() {
           />
         </div>
         <FieldError message={error ?? undefined} />
+        {success ? (
+          <p className="rounded-xl border border-primary-mid bg-primary-light/40 px-4 py-3 text-sm text-text">
+            {success}
+          </p>
+        ) : null}
         <Button type="submit" className="w-full" size="lg" disabled={loading}>
           {loading ? "Creating..." : "Create Account"}
         </Button>

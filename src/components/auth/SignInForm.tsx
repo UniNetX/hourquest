@@ -18,18 +18,39 @@ export function SignInForm({ next }: { next?: string }) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    setLoading(false);
-    if (signInError) {
-      setError(signInError.message);
-      return;
+
+    try {
+      let supabase;
+      try {
+        supabase = createClient();
+      } catch {
+        setError(
+          "Sign in is unavailable — site configuration is incomplete. Please try again later.",
+        );
+        return;
+      }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        setError(signInError.message);
+        return;
+      }
+
+      router.push(next || "/dashboard");
+      router.refresh();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.",
+      );
+    } finally {
+      setLoading(false);
     }
-    router.push(next || "/dashboard");
-    router.refresh();
   }
 
   return (

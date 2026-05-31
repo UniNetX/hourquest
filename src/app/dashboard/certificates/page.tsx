@@ -1,4 +1,5 @@
 import { IconLock } from "@tabler/icons-react";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -15,7 +16,7 @@ export const metadata = createMetadata({
 
 export default async function CertificatesPage() {
   const supabase = await createClient();
-  if (!supabase) return null;
+  if (!supabase) redirect("/signin");
 
   const {
     data: { user },

@@ -14,16 +14,43 @@ if (!url || !key) {
 const ref = url.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1];
 console.log("Project ref:", ref);
 
-const res = await fetch(`${url}/rest/v1/challenges?select=id&limit=1`, {
-  headers: { apikey: key, Authorization: `Bearer ${key}` },
-});
-const body = await res.text();
-console.log("challenges table:", res.ok ? "OK" : body);
+async function checkTable(name) {
+  const res = await fetch(`${url}/rest/v1/${name}?select=id&limit=1`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+  });
+  const body = await res.text();
+  console.log(`${name} table:`, res.ok ? "OK" : body);
+  return res.ok;
+}
 
-const res2 = await fetch(`${url}/rest/v1/profiles?select=id&limit=1`, {
-  headers: { apikey: key, Authorization: `Bearer ${key}` },
-});
-const body2 = await res2.text();
-console.log("profiles table:", res2.ok ? "OK" : body2);
+async function checkRpc(name, body = {}) {
+  const res = await fetch(`${url}/rest/v1/rpc/${name}`, {
+    method: "POST",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const text = await res.text();
+  const missing = text.includes("PGRST202");
+  console.log(
+    `${name} function:`,
+    missing ? "MISSING — run supabase/PATCH_MISSING_FUNCTIONS.sql" : "OK",
+  );
+  return !missing;
+}
 
-process.exit(res.ok && res2.ok ? 0 : 1);
+const tablesOk =
+  (await checkTable("challenges")) && (await checkTable("profiles"));
+const rpcOk = await checkRpc("admin_upsert_challenge");
+
+if (!rpcOk) {
+  console.error(
+    "\nAdmin functions are missing. Open Supabase SQL Editor and run:",
+    "supabase/PATCH_MISSING_FUNCTIONS.sql",
+  );
+}
+
+process.exit(tablesOk && rpcOk ? 0 : 1);

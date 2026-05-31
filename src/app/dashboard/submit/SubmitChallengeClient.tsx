@@ -10,10 +10,14 @@ import { FieldError, Input, Label, Textarea } from "@/components/ui/Input";
 import type { Challenge } from "@/types/database";
 import { CHALLENGE_CATEGORIES } from "@/lib/challenges/constants";
 
-export default function SubmitChallengeClient() {
+export default function SubmitChallengeClient({
+  initialChallenges,
+}: {
+  initialChallenges: Challenge[];
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [challenges, setChallenges] = useState<Challenge[]>(initialChallenges);
   const [challengeId, setChallengeId] = useState(
     searchParams.get("challengeId") ?? "",
   );
@@ -35,16 +39,21 @@ export default function SubmitChallengeClient() {
         router.push("/signin");
         return;
       }
-      const { data: challengeData } = await supabase
+      if (initialChallenges.length > 0) return;
+      const { data: challengeData, error: loadError } = await supabase
         .from("challenges")
         .select("*")
         .eq("active", true)
         .order("category")
         .order("sort_order");
+      if (loadError) {
+        setError(loadError.message);
+        return;
+      }
       setChallenges(challengeData ?? []);
     }
     load();
-  }, [router]);
+  }, [router, initialChallenges.length]);
 
   function onFilesSelected(list: FileList | null) {
     if (!list) return;

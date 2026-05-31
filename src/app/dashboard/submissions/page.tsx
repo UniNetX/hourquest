@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SubmissionsList } from "@/components/dashboard/SubmissionsList";
 import { createMetadata } from "@/lib/seo";
@@ -11,7 +12,7 @@ export const metadata = createMetadata({
 
 export default async function SubmissionsPage() {
   const supabase = await createClient();
-  if (!supabase) return null;
+  if (!supabase) redirect("/signin");
 
   const {
     data: { user },
