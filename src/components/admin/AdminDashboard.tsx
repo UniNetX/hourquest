@@ -39,6 +39,7 @@ import type {
   ChallengeDifficulty,
   ChallengeTrack,
   ChallengeSubmission,
+  HomepageTestimonial,
   PartnerOrganization,
   StudentStory,
 } from "@/types/database";
@@ -56,25 +57,36 @@ type StudentStoryWithProfile = StudentStory & {
   profiles?: { full_name: string; school_name: string | null } | null;
 };
 
-type StoryEditDraft = {
+type HomepageTestimonialDraft = {
   comment: string;
   rating: number;
-  show_on_homepage: boolean;
-  homepage_sort_order: number;
   display_name: string;
   display_school: string;
+  sort_order: number;
 };
 
-function storyDefaults(story: StudentStoryWithProfile): StoryEditDraft {
+function homepageTestimonialDefaults(
+  item?: HomepageTestimonial,
+): HomepageTestimonialDraft {
   return {
-    comment: story.comment,
-    rating: story.rating,
-    show_on_homepage: story.show_on_homepage ?? false,
-    homepage_sort_order: story.homepage_sort_order ?? 0,
-    display_name: story.display_name ?? story.profiles?.full_name ?? "",
-    display_school: story.display_school ?? story.profiles?.school_name ?? "",
+    comment: item?.comment ?? "",
+    rating: item?.rating ?? 5,
+    display_name: item?.display_name ?? "",
+    display_school: item?.display_school ?? "",
+    sort_order: item?.sort_order ?? 0,
   };
 }
+
+const ADMIN_TAB_LABELS: Record<
+  "submissions" | "challenges" | "stories" | "users" | "partners",
+  string
+> = {
+  submissions: "Submissions",
+  challenges: "Challenges",
+  stories: "Testimonials",
+  users: "Users",
+  partners: "Partners",
+};
 
 function SortableChallengeRow({
   challenge,
@@ -142,6 +154,7 @@ export function AdminDashboard({
   initialSubmissions,
   initialChallenges,
   initialStories,
+  initialHomepageTestimonials,
   initialUsers,
   initialPartners,
 }: {
@@ -154,6 +167,7 @@ export function AdminDashboard({
   initialSubmissions: ChallengeSubmission[];
   initialChallenges: Challenge[];
   initialStories: StudentStory[];
+  initialHomepageTestimonials: HomepageTestimonial[];
   initialUsers: ProfileRow[];
   initialPartners: PartnerOrganization[];
 }) {
@@ -163,8 +177,15 @@ export function AdminDashboard({
   const [submissions, setSubmissions] = useState(initialSubmissions);
   const [challenges, setChallenges] = useState(initialChallenges);
   const [stories, setStories] = useState(initialStories as StudentStoryWithProfile[]);
-  const [editingStoryId, setEditingStoryId] = useState<string | null>(null);
-  const [storyDraft, setStoryDraft] = useState<StoryEditDraft | null>(null);
+  const [homepageTestimonials, setHomepageTestimonials] = useState(
+    initialHomepageTestimonials,
+  );
+  const [editingHomepageId, setEditingHomepageId] = useState<string | "new" | null>(
+    null,
+  );
+  const [homepageDraft, setHomepageDraft] = useState<HomepageTestimonialDraft | null>(
+    null,
+  );
   const [users, setUsers] = useState(initialUsers);
   const [trackFilter, setTrackFilter] = useState<ChallengeTrack>("environmental");
   const [categoryFilter, setCategoryFilter] = useState<ChallengeCategory | "all">("all");
@@ -185,19 +206,24 @@ export function AdminDashboard({
 
   const loadData = useCallback(async () => {
     const supabase = createClient();
-    const [subs, chals, sts, profs, partnerRows] = await Promise.all([
+    const [subs, chals, sts, homepage, profs, partnerRows] = await Promise.all([
       supabase.from("challenge_submissions").select("*").order("submitted_at", { ascending: false }),
       supabase.from("challenges").select("*").order("track").order("category").order("sort_order"),
       supabase
         .from("student_stories")
         .select("*, profiles(full_name, school_name)")
         .order("submitted_at", { ascending: false }),
+      supabase
+        .from("homepage_testimonials")
+        .select("*")
+        .order("sort_order", { ascending: true }),
       supabase.from("profiles").select("id, full_name, school_name, total_verified_hours, created_at").order("created_at", { ascending: false }).limit(100),
       supabase.rpc("admin_list_partner_orgs", { p_status: null }),
     ]);
     setSubmissions(subs.data ?? []);
     setChallenges(chals.data ?? []);
     setStories(sts.data ?? []);
+    setHomepageTestimonials((homepage.data as HomepageTestimonial[]) ?? []);
     setUsers(profs.data ?? []);
     setPartners((partnerRows.data as PartnerOrganization[]) ?? []);
   }, []);
@@ -284,34 +310,47 @@ export function AdminDashboard({
     loadData();
   }
 
-  function startEditStory(story: StudentStoryWithProfile) {
-    setEditingStoryId(story.id);
-    setStoryDraft(storyDefaults(story));
+  function startEditHomepage(item?: HomepageTestimonial) {
+    setEditingHomepageId(item?.id ?? "new");
+    setHomepageDraft(homepageTestimonialDefaults(item));
   }
 
-  async function saveStoryEdit(storyId: string) {
-    if (!storyDraft) return;
-    const res = await fetch("/api/admin/stories", {
+  async function saveHomepageTestimonial() {
+    if (!homepageDraft) return;
+    const res = await fetch("/api/admin/homepage-testimonials", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        action: "update",
-        storyId,
-        comment: storyDraft.comment,
-        rating: storyDraft.rating,
-        showOnHomepage: storyDraft.show_on_homepage,
-        homepageSortOrder: storyDraft.homepage_sort_order,
-        displayName: storyDraft.display_name,
-        displaySchool: storyDraft.display_school,
+        id: editingHomepageId === "new" ? undefined : editingHomepageId,
+        comment: homepageDraft.comment,
+        rating: homepageDraft.rating,
+        displayName: homepageDraft.display_name,
+        displaySchool: homepageDraft.display_school,
+        sortOrder: homepageDraft.sort_order,
       }),
     });
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
-      alert(json.error ?? "Failed to save story");
+      alert(json.error ?? "Failed to save testimonial");
       return;
     }
-    setEditingStoryId(null);
-    setStoryDraft(null);
+    setEditingHomepageId(null);
+    setHomepageDraft(null);
+    loadData();
+  }
+
+  async function deleteHomepageTestimonial(id: string) {
+    if (!confirm("Remove this testimonial from the homepage?")) return;
+    const res = await fetch("/api/admin/homepage-testimonials", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete", id }),
+    });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      alert(json.error ?? "Failed to delete testimonial");
+      return;
+    }
     loadData();
   }
 
@@ -400,7 +439,7 @@ export function AdminDashboard({
                   : "border border-border bg-surface text-text-muted hover:text-text",
               )}
             >
-              {key}
+              {ADMIN_TAB_LABELS[key]}
             </button>
           ))}
         </div>
@@ -544,9 +583,259 @@ export function AdminDashboard({
         {tab === "stories" && (
           <div className="space-y-8">
             <div>
-              <h2 className="mb-3 text-lg font-medium">Pending reviews</h2>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-medium">Homepage testimonials</h2>
+                  <p className="mt-1 text-sm text-text-muted">
+                    Exactly three quotes appear on the home page carousel ({homepageTestimonials.length}/3).
+                  </p>
+                </div>
+                {homepageTestimonials.length < 3 && editingHomepageId !== "new" && (
+                  <Button
+                    className="px-3 py-1 text-[12px]"
+                    onClick={() => startEditHomepage()}
+                  >
+                    Add testimonial
+                  </Button>
+                )}
+              </div>
+
+              {editingHomepageId === "new" && homepageDraft && (
+                <Card className="mb-4 space-y-3">
+                  <p className="text-sm font-medium text-primary-dark">New testimonial</p>
+                  <div>
+                    <Label>Quote</Label>
+                    <Textarea
+                      value={homepageDraft.comment}
+                      onChange={(e) =>
+                        setHomepageDraft({ ...homepageDraft, comment: e.target.value })
+                      }
+                      rows={3}
+                    />
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <Label>Name</Label>
+                      <Input
+                        value={homepageDraft.display_name}
+                        onChange={(e) =>
+                          setHomepageDraft({
+                            ...homepageDraft,
+                            display_name: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label>School</Label>
+                      <Input
+                        value={homepageDraft.display_school}
+                        onChange={(e) =>
+                          setHomepageDraft({
+                            ...homepageDraft,
+                            display_school: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <Label>Rating (1–5)</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={5}
+                        value={homepageDraft.rating}
+                        onChange={(e) =>
+                          setHomepageDraft({
+                            ...homepageDraft,
+                            rating: Number(e.target.value),
+                          })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label>Display order</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={2}
+                        value={homepageDraft.sort_order}
+                        onChange={(e) =>
+                          setHomepageDraft({
+                            ...homepageDraft,
+                            sort_order: Number(e.target.value),
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button className="px-3 py-1 text-[12px]" onClick={saveHomepageTestimonial}>
+                      Save
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      className="px-3 py-1 text-[12px]"
+                      onClick={() => {
+                        setEditingHomepageId(null);
+                        setHomepageDraft(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </Card>
+              )}
+
+              {homepageTestimonials.length === 0 && editingHomepageId !== "new" ? (
+                <Card className="text-sm text-text-muted">
+                  No homepage testimonials yet. Add up to three.
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {homepageTestimonials.map((item) => {
+                    const isEditing = editingHomepageId === item.id;
+                    const draft = isEditing ? homepageDraft : null;
+                    return (
+                      <Card key={item.id}>
+                        {isEditing && draft ? (
+                          <div className="space-y-3">
+                            <div>
+                              <Label>Quote</Label>
+                              <Textarea
+                                value={draft.comment}
+                                onChange={(e) =>
+                                  setHomepageDraft({ ...draft, comment: e.target.value })
+                                }
+                                rows={3}
+                              />
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <div>
+                                <Label>Name</Label>
+                                <Input
+                                  value={draft.display_name}
+                                  onChange={(e) =>
+                                    setHomepageDraft({
+                                      ...draft,
+                                      display_name: e.target.value,
+                                    })
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <Label>School</Label>
+                                <Input
+                                  value={draft.display_school}
+                                  onChange={(e) =>
+                                    setHomepageDraft({
+                                      ...draft,
+                                      display_school: e.target.value,
+                                    })
+                                  }
+                                />
+                              </div>
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <div>
+                                <Label>Rating (1–5)</Label>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  max={5}
+                                  value={draft.rating}
+                                  onChange={(e) =>
+                                    setHomepageDraft({
+                                      ...draft,
+                                      rating: Number(e.target.value),
+                                    })
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <Label>Display order</Label>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  max={2}
+                                  value={draft.sort_order}
+                                  onChange={(e) =>
+                                    setHomepageDraft({
+                                      ...draft,
+                                      sort_order: Number(e.target.value),
+                                    })
+                                  }
+                                />
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                className="px-3 py-1 text-[12px]"
+                                onClick={saveHomepageTestimonial}
+                              >
+                                Save
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                className="px-3 py-1 text-[12px]"
+                                onClick={() => {
+                                  setEditingHomepageId(null);
+                                  setHomepageDraft(null);
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <div>
+                                <p className="text-[13px] font-medium">{item.display_name}</p>
+                                <p className="text-[11px] text-text-caption">
+                                  {item.display_school || "No school"} · {item.rating} stars ·
+                                  order {item.sort_order}
+                                </p>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="secondary"
+                                  className="px-3 py-1 text-[12px]"
+                                  onClick={() => startEditHomepage(item)}
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="danger"
+                                  className="px-3 py-1 text-[12px]"
+                                  onClick={() => deleteHomepageTestimonial(item.id)}
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            </div>
+                            <p className="mt-2 text-[13px] italic text-text-muted">
+                              &ldquo;{item.comment}&rdquo;
+                            </p>
+                          </>
+                        )}
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <h2 className="mb-3 text-lg font-medium">Student submissions</h2>
+              <p className="mb-4 text-sm text-text-muted">
+                Reviews submitted by students on the Stories page (separate from homepage
+                testimonials).
+              </p>
               {stories.filter((s) => !s.approved).length === 0 ? (
-                <Card className="text-sm text-text-muted">No pending stories.</Card>
+                <Card className="text-sm text-text-muted">No pending student reviews.</Card>
               ) : (
                 <div className="space-y-2">
                   {stories
@@ -571,168 +860,6 @@ export function AdminDashboard({
                         </div>
                       </Card>
                     ))}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <h2 className="mb-1 text-lg font-medium">Homepage testimonials</h2>
-              <p className="mb-4 text-sm text-text-muted">
-                Choose and edit reviews shown in the home page carousel. Enable
-                &ldquo;Show on homepage&rdquo; and set order (lower numbers appear first).
-              </p>
-              {stories.filter((s) => s.approved).length === 0 ? (
-                <Card className="text-sm text-text-muted">No approved stories yet.</Card>
-              ) : (
-                <div className="space-y-3">
-                  {stories
-                    .filter((s) => s.approved)
-                    .map((story) => {
-                      const isEditing = editingStoryId === story.id;
-                      const draft = isEditing ? storyDraft : null;
-                      const profileName = story.profiles?.full_name ?? "Student";
-                      return (
-                        <Card key={story.id}>
-                          {isEditing && draft ? (
-                            <div className="space-y-3">
-                              <div>
-                                <Label>Quote</Label>
-                                <Textarea
-                                  value={draft.comment}
-                                  onChange={(e) =>
-                                    setStoryDraft({ ...draft, comment: e.target.value })
-                                  }
-                                  rows={3}
-                                />
-                              </div>
-                              <div className="grid gap-3 sm:grid-cols-2">
-                                <div>
-                                  <Label>Rating (1–5)</Label>
-                                  <Input
-                                    type="number"
-                                    min={1}
-                                    max={5}
-                                    value={draft.rating}
-                                    onChange={(e) =>
-                                      setStoryDraft({
-                                        ...draft,
-                                        rating: Number(e.target.value),
-                                      })
-                                    }
-                                  />
-                                </div>
-                                <div>
-                                  <Label>Homepage order</Label>
-                                  <Input
-                                    type="number"
-                                    min={0}
-                                    value={draft.homepage_sort_order}
-                                    onChange={(e) =>
-                                      setStoryDraft({
-                                        ...draft,
-                                        homepage_sort_order: Number(e.target.value),
-                                      })
-                                    }
-                                  />
-                                </div>
-                              </div>
-                              <div className="grid gap-3 sm:grid-cols-2">
-                                <div>
-                                  <Label>Display name</Label>
-                                  <Input
-                                    value={draft.display_name}
-                                    placeholder={profileName}
-                                    onChange={(e) =>
-                                      setStoryDraft({
-                                        ...draft,
-                                        display_name: e.target.value,
-                                      })
-                                    }
-                                  />
-                                </div>
-                                <div>
-                                  <Label>Display school</Label>
-                                  <Input
-                                    value={draft.display_school}
-                                    placeholder={story.profiles?.school_name ?? ""}
-                                    onChange={(e) =>
-                                      setStoryDraft({
-                                        ...draft,
-                                        display_school: e.target.value,
-                                      })
-                                    }
-                                  />
-                                </div>
-                              </div>
-                              <label className="flex items-center gap-2 text-sm">
-                                <input
-                                  type="checkbox"
-                                  checked={draft.show_on_homepage}
-                                  onChange={(e) =>
-                                    setStoryDraft({
-                                      ...draft,
-                                      show_on_homepage: e.target.checked,
-                                    })
-                                  }
-                                />
-                                Show on homepage
-                              </label>
-                              <div className="flex gap-2">
-                                <Button
-                                  className="px-3 py-1 text-[12px]"
-                                  onClick={() => saveStoryEdit(story.id)}
-                                >
-                                  Save
-                                </Button>
-                                <Button
-                                  variant="secondary"
-                                  className="px-3 py-1 text-[12px]"
-                                  onClick={() => {
-                                    setEditingStoryId(null);
-                                    setStoryDraft(null);
-                                  }}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="flex flex-wrap items-start justify-between gap-2">
-                                <div>
-                                  <p className="text-[13px] font-medium">
-                                    {story.display_name || profileName}
-                                    {(story.show_on_homepage ?? false) && (
-                                      <span className="ml-2 rounded-full bg-primary-light px-2 py-0.5 text-[10px] font-semibold text-primary">
-                                        On homepage
-                                      </span>
-                                    )}
-                                  </p>
-                                  <p className="text-[11px] text-text-caption">
-                                    {story.display_school ||
-                                      story.profiles?.school_name ||
-                                      "No school"}
-                                    {" · "}
-                                    {story.rating} stars · order{" "}
-                                    {story.homepage_sort_order ?? 0}
-                                  </p>
-                                </div>
-                                <Button
-                                  variant="secondary"
-                                  className="px-3 py-1 text-[12px]"
-                                  onClick={() => startEditStory(story)}
-                                >
-                                  Edit
-                                </Button>
-                              </div>
-                              <p className="mt-2 text-[13px] italic text-text-muted">
-                                &ldquo;{story.comment}&rdquo;
-                              </p>
-                            </>
-                          )}
-                        </Card>
-                      );
-                    })}
                 </div>
               )}
             </div>

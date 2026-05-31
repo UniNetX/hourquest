@@ -3,6 +3,7 @@
 import { IconStarFilled } from "@tabler/icons-react";
 import { getDisplayInitial } from "@/lib/profile-display";
 import { cn } from "@/lib/utils";
+import type { HomepageTestimonial } from "@/types/database";
 
 export type Testimonial = {
   id: string;
@@ -12,66 +13,13 @@ export type Testimonial = {
   school: string;
 };
 
-const FALLBACK_TESTIMONIALS: Testimonial[] = [
-  {
-    id: "fallback-1",
-    rating: 5,
-    comment:
-      "HourQuest made it easy to log real volunteer work. My counselor loved the verified hours on my application.",
-    name: "Maya R.",
-    school: "Lincoln High School",
-  },
-  {
-    id: "fallback-2",
-    rating: 5,
-    comment:
-      "The medical challenges pushed me to learn first aid and help at community health events. Proof upload was simple.",
-    name: "Jordan K.",
-    school: "Westview Academy",
-  },
-  {
-    id: "fallback-3",
-    rating: 5,
-    comment:
-      "I completed environmental challenges with my club and earned certificates I could share with colleges.",
-    name: "Priya S.",
-    school: "Oak Ridge High",
-  },
-  {
-    id: "fallback-4",
-    rating: 5,
-    comment:
-      "Finally a platform that tracks hours honestly. Reviews were fast and the dashboard kept me motivated.",
-    name: "Alex T.",
-    school: "Summit Prep",
-  },
-  {
-    id: "fallback-5",
-    rating: 5,
-    comment:
-      "Partnership challenges from local orgs gave our class meaningful projects beyond one-off events.",
-    name: "Sam L.",
-    school: "Riverdale High",
-  },
-];
-
-type StoryRow = {
-  id: string;
-  rating: number;
-  comment: string;
-  display_name?: string | null;
-  display_school?: string | null;
-  profiles?: { full_name: string; school_name: string | null } | null;
-};
-
-function toTestimonials(stories: StoryRow[]): Testimonial[] {
-  return stories.map((s) => ({
-    id: s.id,
-    rating: s.rating,
-    comment: s.comment,
-    name: s.display_name?.trim() || s.profiles?.full_name || "Anonymous",
-    school:
-      s.display_school?.trim() || s.profiles?.school_name || "Verified student",
+function toTestimonials(items: HomepageTestimonial[]): Testimonial[] {
+  return items.map((item) => ({
+    id: item.id,
+    rating: item.rating,
+    comment: item.comment,
+    name: item.display_name,
+    school: item.display_school || "Verified student",
   }));
 }
 
@@ -100,17 +48,21 @@ function TestimonialCard({ item }: { item: Testimonial }) {
 }
 
 export function TestimonialsCarousel({
-  stories,
+  testimonials = [],
   className,
 }: {
-  stories?: StoryRow[];
+  testimonials?: HomepageTestimonial[];
   className?: string;
 }) {
-  const fromDb = stories?.length ? toTestimonials(stories) : [];
-  const items =
-    fromDb.length >= 3
-      ? fromDb
-      : [...fromDb, ...FALLBACK_TESTIMONIALS].slice(0, 6);
+  const items = toTestimonials(testimonials.slice(0, 3));
+
+  if (items.length === 0) {
+    return (
+      <p className="text-center text-sm text-text-muted">
+        Testimonials will appear here once added in admin.
+      </p>
+    );
+  }
 
   const doubled = [...items, ...items];
 

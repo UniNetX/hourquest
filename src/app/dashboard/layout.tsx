@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
+import { NavBar } from "@/components/layout/NavBar";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { getProfileDisplayName } from "@/lib/profile-display";
 import { createClient } from "@/lib/supabase/server";
@@ -35,18 +37,26 @@ export default async function DashboardLayout({
     }
   }
 
+  const navUser = {
+    name: getProfileDisplayName(
+      profile?.full_name,
+      user.email,
+      typeof user.user_metadata?.full_name === "string"
+        ? user.user_metadata.full_name
+        : null,
+    ),
+  };
+
   return (
-    <DashboardShell
-      name={getProfileDisplayName(
-        profile?.full_name,
-        user.email,
-        typeof user.user_metadata?.full_name === "string"
-          ? user.user_metadata.full_name
-          : null,
-      )}
-      school={profile?.school_name}
-    >
-      {children}
-    </DashboardShell>
+    <>
+      <AnnouncementBar />
+      <NavBar user={navUser} />
+      <DashboardShell
+        name={navUser.name}
+        school={profile?.school_name}
+      >
+        {children}
+      </DashboardShell>
+    </>
   );
 }

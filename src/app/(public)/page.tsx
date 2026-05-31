@@ -28,7 +28,7 @@ async function getHomeData() {
     featured: [] as Challenge[],
     stats: { hours: 0, students: 0, challenges: 0 },
     leaderboard: [],
-    stories: [],
+    testimonials: [],
     user: null,
   };
 
@@ -54,29 +54,11 @@ async function getHomeData() {
     supabase.auth.getUser(),
   ]);
 
-  const curatedStories = await supabase
-    .from("student_stories")
-    .select("*, profiles(full_name, school_name)")
-    .eq("approved", true)
-    .eq("show_on_homepage", true)
-    .order("homepage_sort_order", { ascending: true })
-    .order("submitted_at", { ascending: false })
-    .limit(12);
-
-  let stories = curatedStories.data ?? [];
-  if (curatedStories.error || stories.length === 0) {
-    const recentStories = await supabase
-      .from("student_stories")
-      .select("*, profiles(full_name, school_name)")
-      .eq("approved", true)
-      .order("submitted_at", { ascending: false })
-      .limit(6);
-    if (!curatedStories.error && stories.length === 0) {
-      stories = recentStories.data ?? [];
-    } else if (curatedStories.error) {
-      stories = recentStories.data ?? [];
-    }
-  }
+  const testimonialsRes = await supabase
+    .from("homepage_testimonials")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .limit(3);
 
   const hours =
     (statsRes[0].data as { total_verified_hours: number }[] | null)?.reduce(
@@ -108,13 +90,13 @@ async function getHomeData() {
       challenges: statsRes[2].count ?? 0,
     },
     leaderboard: leaderboardRes.data ?? [],
-    stories,
+    testimonials: testimonialsRes.data ?? [],
     user: userRes.data.user,
   };
 }
 
 export default async function HomePage() {
-  const { featured, stats, leaderboard, stories, user } = await getHomeData();
+  const { featured, stats, leaderboard, testimonials, user } = await getHomeData();
   const startHref = (id: string) =>
     user
       ? dashboardSubmitHref(id)
@@ -174,7 +156,7 @@ export default async function HomePage() {
             title="What Students Are Saying"
             subtitle="Hear from students earning verified environmental and medical service hours with HourQuest."
           />
-          <TestimonialsCarousel stories={stories as never[]} />
+          <TestimonialsCarousel testimonials={testimonials} />
         </div>
       </section>
       <CtaBand

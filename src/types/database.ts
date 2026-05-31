@@ -92,6 +92,17 @@ export interface ChallengeSubmission {
   reviewed_by: string | null;
 }
 
+export interface HomepageTestimonial {
+  id: string;
+  rating: number;
+  comment: string;
+  display_name: string;
+  display_school: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface StudentStory {
   id: string;
   user_id: string;

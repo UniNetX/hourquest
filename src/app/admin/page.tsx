@@ -31,6 +31,7 @@ export default async function AdminPage() {
     submissionsData,
     challengesData,
     storiesData,
+    homepageTestimonialsData,
     usersData,
     partnersData,
   ] = await Promise.all([
@@ -52,6 +53,10 @@ export default async function AdminPage() {
       .from("student_stories")
       .select("*, profiles(full_name, school_name)")
       .order("submitted_at", { ascending: false }),
+    supabase
+      .from("homepage_testimonials")
+      .select("*")
+      .order("sort_order", { ascending: true }),
     supabase
       .from("profiles")
       .select("id, full_name, school_name, total_verified_hours, created_at")
@@ -77,6 +82,7 @@ export default async function AdminPage() {
       initialSubmissions={submissionsData.data ?? []}
       initialChallenges={challengesData.data ?? []}
       initialStories={storiesData.data ?? []}
+      initialHomepageTestimonials={homepageTestimonialsData.data ?? []}
       initialUsers={usersData.data ?? []}
       initialPartners={partnersData.data ?? []}
     />

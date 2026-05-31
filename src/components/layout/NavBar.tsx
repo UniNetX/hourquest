@@ -39,8 +39,6 @@ export function NavBar({
   const [mobileAboutOpen, setMobileAboutOpen] = useState(false);
   const aboutRef = useRef<HTMLDivElement>(null);
 
-  const onDashboard = pathname.startsWith("/dashboard");
-
   useEffect(() => {
     setOpen(false);
     setAboutOpen(false);
@@ -82,10 +80,6 @@ export function NavBar({
         ? "bg-primary-light text-primary-dark"
         : "text-text-muted hover:bg-primary-light/50 hover:text-primary-dark",
     );
-
-  if (onDashboard) {
-    return null;
-  }
 
   const loggedInLinks = user
     ? [
