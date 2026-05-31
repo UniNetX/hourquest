@@ -20,6 +20,7 @@ const icons = {
   droplet: IconDroplet,
   speakerphone: IconSpeakerphone,
   users: IconUsers,
+  school: IconSchool,
   health_education: IconSchool,
   wellness: IconHeart,
   first_aid: IconFirstAidKit,

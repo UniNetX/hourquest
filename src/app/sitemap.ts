@@ -14,6 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/stories",
     "/signin",
     "/signup",
+    "/partner/signup",
   ];
 
   return routes.map((route) => ({

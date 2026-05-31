@@ -1,4 +1,8 @@
-export type ChallengeTrack = "environmental" | "medical";
+export type UserType = "hs_student" | "partner";
+
+export type PartnerOrgStatus = "pending" | "approved" | "rejected";
+
+export type ChallengeTrack = "environmental" | "medical" | "partnership";
 
 export type EnvironmentalChallengeCategory =
   | "cleanup"
@@ -16,13 +20,37 @@ export type MedicalChallengeCategory =
   | "nutrition"
   | "community_health";
 
+export type PartnershipChallengeCategory =
+  | "community_service"
+  | "education"
+  | "fundraising"
+  | "outreach"
+  | "wellness_partner"
+  | "other";
+
 export type ChallengeCategory =
   | EnvironmentalChallengeCategory
-  | MedicalChallengeCategory;
+  | MedicalChallengeCategory
+  | PartnershipChallengeCategory;
 
 export type ChallengeDifficulty = "easy" | "medium" | "hard";
 
 export type SubmissionStatus = "pending" | "approved" | "rejected";
+
+export interface PartnerOrganization {
+  id: string;
+  name: string;
+  description: string | null;
+  website: string | null;
+  logo_url: string | null;
+  status: PartnerOrgStatus;
+  owner_user_id: string;
+  rejection_reason: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface Challenge {
   id: string;
@@ -37,8 +65,13 @@ export interface Challenge {
   active: boolean;
   sort_order: number;
   total_submissions: number;
+  partner_org_id: string | null;
   created_at: string;
   updated_at: string;
+  partner_organization?: Pick<
+    PartnerOrganization,
+    "id" | "name" | "logo_url" | "description"
+  > | null;
 }
 
 export interface ChallengeSubmission {
@@ -78,6 +111,8 @@ export interface Profile {
   total_verified_hours: number;
   week_streak: number;
   is_public: boolean;
+  user_type: UserType;
+  partner_org_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -123,6 +158,12 @@ export type Database = {
         Row: Profile;
         Insert: Partial<Profile> & Pick<Profile, "id" | "full_name">;
         Update: Partial<Profile>;
+        Relationships: [];
+      };
+      partner_organizations: {
+        Row: PartnerOrganization;
+        Insert: Partial<PartnerOrganization> & Pick<PartnerOrganization, "name" | "owner_user_id">;
+        Update: Partial<PartnerOrganization>;
         Relationships: [];
       };
       certificates: {
@@ -194,6 +235,30 @@ export type Database = {
       admin_moderate_story: {
         Args: { p_story_id: string; p_approved: boolean };
         Returns: StudentStory;
+      };
+      admin_review_partner_org: {
+        Args: {
+          p_org_id: string;
+          p_action: string;
+          p_rejection_reason?: string | null;
+        };
+        Returns: PartnerOrganization;
+      };
+      admin_list_partner_orgs: {
+        Args: { p_status?: string | null };
+        Returns: PartnerOrganization[];
+      };
+      partner_upsert_challenge: {
+        Args: { p_payload: Record<string, unknown> };
+        Returns: Challenge;
+      };
+      partner_delete_challenge: {
+        Args: { p_challenge_id: string };
+        Returns: void;
+      };
+      partner_reorder_challenges: {
+        Args: { p_category: string; p_ordered_ids: string[] };
+        Returns: void;
       };
     };
     Enums: {

@@ -136,3 +136,5 @@ grant execute on function public.admin_upsert_challenge(jsonb) to authenticated;
 grant execute on function public.admin_reorder_challenges(text, text, uuid[]) to authenticated;
 grant execute on function public.admin_delete_challenge(uuid) to authenticated;
 grant execute on function public.admin_moderate_story(uuid, boolean) to authenticated;
+
+-- Partner functions: run supabase/migrations/20260601120000_partner_accounts.sql on remote if missing.

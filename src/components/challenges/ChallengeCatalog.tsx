@@ -32,6 +32,19 @@ function parseTrack(value: string | null): TrackFilter {
   return "all";
 }
 
+function isChallengeTrack(track: TrackFilter): track is ChallengeTrack {
+  return track === "environmental" || track === "medical" || track === "partnership";
+}
+
+function parseCategory(
+  raw: ChallengeCategory | null,
+  track: TrackFilter,
+): ChallengeCategory | "all" {
+  if (!raw || !isChallengeTrack(track)) return "all";
+  const valid = getCategoriesForTrack(track).some((c) => c.id === raw);
+  return valid ? raw : "all";
+}
+
 export function ChallengeCatalog({
   initialChallenges,
   isLoggedIn,
@@ -47,24 +60,22 @@ export function ChallengeCatalog({
   const [track, setTrack] = useState<TrackFilter>(() =>
     parseTrack(searchParams.get("track")),
   );
-  const [category, setCategory] = useState<ChallengeCategory | "all">(() => {
-    const raw = searchParams.get("category") as ChallengeCategory | null;
-    const initialTrack = parseTrack(searchParams.get("track"));
-    if (!raw || initialTrack === "all") return "all";
-    const valid = getCategoriesForTrack(initialTrack).some((c) => c.id === raw);
-    return valid ? raw : "all";
-  });
+  const [category, setCategory] = useState<ChallengeCategory | "all">(() =>
+    parseCategory(
+      searchParams.get("category") as ChallengeCategory | null,
+      parseTrack(searchParams.get("track")),
+    ),
+  );
 
   useEffect(() => {
     const nextTrack = parseTrack(searchParams.get("track"));
     setTrack(nextTrack);
-    const raw = searchParams.get("category") as ChallengeCategory | null;
-    if (!raw || nextTrack === "all" || nextTrack === "partnership") {
-      setCategory("all");
-      return;
-    }
-    const valid = getCategoriesForTrack(nextTrack).some((c) => c.id === raw);
-    setCategory(valid ? raw : "all");
+    setCategory(
+      parseCategory(
+        searchParams.get("category") as ChallengeCategory | null,
+        nextTrack,
+      ),
+    );
   }, [searchParams]);
 
   function updateFilters(nextTrack: TrackFilter, nextCategory: ChallengeCategory | "all") {
@@ -108,7 +119,9 @@ export function ChallengeCatalog({
         async () => {
           const { data } = await supabase
             .from("challenges")
-            .select("*")
+            .select(
+              "*, partner_organization:partner_organizations(id, name, logo_url, description)",
+            )
             .eq("active", true)
             .order("track")
             .order("category")
@@ -123,13 +136,9 @@ export function ChallengeCatalog({
     };
   }, []);
 
-  const trackCategories =
-    track === "environmental" || track === "medical"
-      ? getCategoriesForTrack(track)
-      : [];
+  const trackCategories = isChallengeTrack(track) ? getCategoriesForTrack(track) : [];
 
   const filtered = useMemo(() => {
-    if (track === "partnership") return [];
     const list = challenges.filter((c) => {
       if (track !== "all" && challengeTrack(c) !== track) return false;
       if (category !== "all" && c.category !== category) return false;
@@ -219,32 +228,30 @@ export function ChallengeCatalog({
               ))}
             </div>
           )}
-          {(track === "all" || track === "partnership") && <div className="mb-8" />}
-          {track === "partnership" ? (
-            <div className="mx-auto max-w-lg rounded-lg border border-border bg-surface px-6 py-12 text-center">
-              <h2 className="font-display text-xl text-primary-dark">
-                Partnership Challenges
-              </h2>
-              <p className="mt-3 text-sm leading-relaxed text-text-muted">
-                Organizations can post custom volunteer challenges here for
-                students to complete. We&apos;re setting this up — partner with
-                us to add yours.
-              </p>
-              <Button href="/partnership" variant="primary" className="mt-6">
-                Partner With Us
-              </Button>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((challenge) => (
+          {track === "all" && <div className="mb-8" />}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.length === 0 && track === "partnership" ? (
+              <div className="col-span-full mx-auto max-w-lg rounded-lg border border-border bg-surface px-6 py-12 text-center">
+                <h2 className="font-display text-xl text-primary-dark">
+                  No partnership challenges yet
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-text-muted">
+                  Partner organizations can post custom challenges here once approved.
+                </p>
+                <Button href="/signup?type=partner" variant="primary" className="mt-6">
+                  Become a partner
+                </Button>
+              </div>
+            ) : (
+              filtered.map((challenge) => (
                 <ChallengeCard
                   key={challenge.id}
                   challenge={challenge}
                   startHref={startHref(challenge.id)}
                 />
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </div>
       </section>
     </>

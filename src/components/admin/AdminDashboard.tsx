@@ -39,6 +39,7 @@ import type {
   ChallengeDifficulty,
   ChallengeTrack,
   ChallengeSubmission,
+  PartnerOrganization,
   StudentStory,
 } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
@@ -118,6 +119,7 @@ export function AdminDashboard({
   initialChallenges,
   initialStories,
   initialUsers,
+  initialPartners,
 }: {
   initialStats: {
     users: number;
@@ -129,8 +131,11 @@ export function AdminDashboard({
   initialChallenges: Challenge[];
   initialStories: StudentStory[];
   initialUsers: ProfileRow[];
+  initialPartners: PartnerOrganization[];
 }) {
-  const [tab, setTab] = useState<"submissions" | "challenges" | "stories" | "users">("submissions");
+  const [tab, setTab] = useState<
+    "submissions" | "challenges" | "stories" | "users" | "partners"
+  >("submissions");
   const [submissions, setSubmissions] = useState(initialSubmissions);
   const [challenges, setChallenges] = useState(initialChallenges);
   const [stories, setStories] = useState(initialStories);
@@ -143,6 +148,9 @@ export function AdminDashboard({
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [userSearch, setUserSearch] = useState("");
+  const [partners, setPartners] = useState(initialPartners);
+  const [partnerRejectId, setPartnerRejectId] = useState<string | null>(null);
+  const [partnerRejectReason, setPartnerRejectReason] = useState("");
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -151,17 +159,39 @@ export function AdminDashboard({
 
   const loadData = useCallback(async () => {
     const supabase = createClient();
-    const [subs, chals, sts, profs] = await Promise.all([
+    const [subs, chals, sts, profs, partnerRows] = await Promise.all([
       supabase.from("challenge_submissions").select("*").order("submitted_at", { ascending: false }),
       supabase.from("challenges").select("*").order("track").order("category").order("sort_order"),
       supabase.from("student_stories").select("*").order("submitted_at", { ascending: false }),
       supabase.from("profiles").select("id, full_name, school_name, total_verified_hours, created_at").order("created_at", { ascending: false }).limit(100),
+      supabase.rpc("admin_list_partner_orgs", { p_status: null }),
     ]);
     setSubmissions(subs.data ?? []);
     setChallenges(chals.data ?? []);
     setStories(sts.data ?? []);
     setUsers(profs.data ?? []);
+    setPartners((partnerRows.data as PartnerOrganization[]) ?? []);
   }, []);
+
+  async function reviewPartner(orgId: string, action: "approve" | "reject", reason?: string) {
+    const res = await fetch("/api/admin/partners/review", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orgId,
+        action,
+        rejectionReason: reason,
+      }),
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      alert(body?.error ?? "Failed to review partner application.");
+      return;
+    }
+    setPartnerRejectId(null);
+    setPartnerRejectReason("");
+    await loadData();
+  }
 
   async function reviewSubmission(id: string, action: "approve" | "reject", reason?: string) {
     await fetch("/api/admin/review-submission", {
@@ -296,7 +326,7 @@ export function AdminDashboard({
         </div>
 
         <div className="flex flex-wrap gap-2" role="tablist" aria-label="Admin sections">
-          {(["submissions", "challenges", "stories", "users"] as const).map((key) => (
+          {(["submissions", "challenges", "stories", "users", "partners"] as const).map((key) => (
             <button
               key={key}
               type="button"
@@ -471,6 +501,71 @@ export function AdminDashboard({
           </div>
         )}
 
+        {tab === "partners" && (
+          <div className="space-y-3">
+            <h2 className="text-lg font-medium">Partner applications</h2>
+            {partners.filter((p) => p.status === "pending").length === 0 ? (
+              <Card className="text-sm text-text-muted">No pending partner applications.</Card>
+            ) : (
+              partners
+                .filter((p) => p.status === "pending")
+                .map((org) => (
+                  <Card key={org.id}>
+                    <p className="text-[13px] font-medium">{org.name}</p>
+                    {org.description && (
+                      <p className="mt-1 text-[12px] text-text-muted">{org.description}</p>
+                    )}
+                    {org.website && (
+                      <p className="mt-1 text-[11px] text-text-caption">
+                        <a
+                          href={org.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          {org.website}
+                        </a>
+                      </p>
+                    )}
+                    <p className="mt-1 text-[11px] text-text-caption">
+                      Applied {org.created_at.slice(0, 10)}
+                    </p>
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        className="px-3 py-1 text-[12px]"
+                        onClick={() => reviewPartner(org.id, "approve")}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        variant="danger"
+                        className="px-3 py-1 text-[12px]"
+                        onClick={() => setPartnerRejectId(org.id)}
+                      >
+                        Reject
+                      </Button>
+                    </div>
+                  </Card>
+                ))
+            )}
+            {partners.filter((p) => p.status !== "pending").length > 0 && (
+              <div className="mt-8">
+                <h3 className="mb-3 text-sm font-medium text-text-muted">Reviewed</h3>
+                <div className="space-y-2">
+                  {partners
+                    .filter((p) => p.status !== "pending")
+                    .map((org) => (
+                      <Card key={org.id} className="text-[12px]">
+                        <span className="font-medium">{org.name}</span>
+                        <span className="ml-2 capitalize text-text-caption">{org.status}</span>
+                      </Card>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {tab === "users" && (
           <div>
             <Input
@@ -522,6 +617,32 @@ export function AdminDashboard({
                 Confirm Reject
               </Button>
               <Button variant="ghost" onClick={() => setRejectId(null)}>
+                Cancel
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {partnerRejectId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <Card className="w-full max-w-md">
+            <h3 className="text-[14px] font-medium">Partner rejection reason</h3>
+            <Textarea
+              className="mt-3"
+              value={partnerRejectReason}
+              onChange={(e) => setPartnerRejectReason(e.target.value)}
+            />
+            <div className="mt-3 flex gap-2">
+              <Button
+                variant="danger"
+                onClick={() =>
+                  reviewPartner(partnerRejectId, "reject", partnerRejectReason)
+                }
+              >
+                Confirm Reject
+              </Button>
+              <Button variant="ghost" onClick={() => setPartnerRejectId(null)}>
                 Cancel
               </Button>
             </div>

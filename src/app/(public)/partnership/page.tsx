@@ -59,17 +59,24 @@ export default function PartnershipPage() {
               <p className="mt-2 text-sm leading-relaxed text-text-muted">
                 {card.description}
               </p>
-              <Button
-                href={
-                  adminEmail
-                    ? partnershipMailto(card.subject, adminEmail)
-                    : undefined
-                }
-                className="mt-5"
-                disabled={!adminEmail}
-              >
-                {card.cta}
-              </Button>
+              <div className="mt-5 flex flex-wrap gap-3">
+                {card.title === "For Organizations" && (
+                  <Button href="/signup?type=partner" variant="primary">
+                    Create partner account
+                  </Button>
+                )}
+                <Button
+                  href={
+                    adminEmail
+                      ? partnershipMailto(card.subject, adminEmail)
+                      : undefined
+                  }
+                  variant={card.title === "For Organizations" ? "secondary" : "primary"}
+                  disabled={!adminEmail}
+                >
+                  {card.cta}
+                </Button>
+              </div>
             </Card>
           ))}
         </div>

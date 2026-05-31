@@ -17,9 +17,22 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, school_name")
+    .select("full_name, school_name, user_type, partner_org_id")
     .eq("id", user.id)
     .single();
+
+  if (profile?.user_type === "partner" && profile.partner_org_id) {
+    const { data: org } = await supabase
+      .from("partner_organizations")
+      .select("status")
+      .eq("id", profile.partner_org_id)
+      .single();
+
+    if (org) {
+      const { getPartnerHomePath } = await import("@/lib/partner-routing");
+      redirect(getPartnerHomePath(org));
+    }
+  }
 
   return (
     <DashboardShell

@@ -11,8 +11,11 @@ function redirectProtectedRoute(request: NextRequest, pathname: string) {
 
 export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const isPartnerSignup = pathname === "/partner/signup";
   const isProtectedRoute =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/admin") ||
+    (pathname.startsWith("/partner") && !isPartnerSignup);
 
   const supabaseEnv = getSupabaseEnv();
   if (!supabaseEnv) {

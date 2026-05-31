@@ -32,6 +32,7 @@ export default async function AdminPage() {
     challengesData,
     storiesData,
     usersData,
+    partnersData,
   ] = await Promise.all([
     supabase.from("profiles").select("id", { count: "exact", head: true }),
     supabase.from("profiles").select("total_verified_hours"),
@@ -53,6 +54,7 @@ export default async function AdminPage() {
       .select("id, full_name, school_name, total_verified_hours, created_at")
       .order("created_at", { ascending: false })
       .limit(100),
+    supabase.rpc("admin_list_partner_orgs", { p_status: null }),
   ]);
 
   const hours =
@@ -73,6 +75,7 @@ export default async function AdminPage() {
       initialChallenges={challengesData.data ?? []}
       initialStories={storiesData.data ?? []}
       initialUsers={usersData.data ?? []}
+      initialPartners={partnersData.data ?? []}
     />
   );
 }

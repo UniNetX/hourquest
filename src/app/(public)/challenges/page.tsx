@@ -17,7 +17,9 @@ export default async function ChallengesPage() {
     supabase
       ? supabase
           .from("challenges")
-          .select("*")
+          .select(
+            "*, partner_organization:partner_organizations(id, name, logo_url, description)",
+          )
           .eq("active", true)
           .order("track")
           .order("category")

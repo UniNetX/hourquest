@@ -16,6 +16,16 @@ export type CategoryMeta = {
 export const CHALLENGE_TRACKS: { id: ChallengeTrack; label: string }[] = [
   { id: "environmental", label: "Environmental" },
   { id: "medical", label: "Medical" },
+  { id: "partnership", label: "Partnership" },
+];
+
+export const PARTNERSHIP_CHALLENGE_CATEGORIES: CategoryMeta[] = [
+  { id: "community_service", label: "Community Service", icon: "users", bg: "#F3E8FF", color: "#6B21A8", track: "partnership" },
+  { id: "education", label: "Education", icon: "school", bg: "#E0E7FF", color: "#4338CA", track: "partnership" },
+  { id: "fundraising", label: "Fundraising", icon: "speakerphone", bg: "#FFF8E1", color: "#E65100", track: "partnership" },
+  { id: "outreach", label: "Outreach", icon: "speakerphone", bg: "#E3F2FD", color: "#185FA5", track: "partnership" },
+  { id: "wellness_partner", label: "Health & Wellness", icon: "wellness", bg: "#E0F2FE", color: "#0369A1", track: "partnership" },
+  { id: "other", label: "Other", icon: "users", bg: "#E8F5E9", color: "#388E3C", track: "partnership" },
 ];
 
 export const ENVIRONMENTAL_CHALLENGE_CATEGORIES: CategoryMeta[] = [
@@ -40,6 +50,7 @@ export const MEDICAL_CHALLENGE_CATEGORIES: CategoryMeta[] = [
 export const CHALLENGE_CATEGORIES = [
   ...ENVIRONMENTAL_CHALLENGE_CATEGORIES,
   ...MEDICAL_CHALLENGE_CATEGORIES,
+  ...PARTNERSHIP_CHALLENGE_CATEGORIES,
 ];
 
 export const DISPLAY_IMPACT_STATS = {
@@ -93,9 +104,9 @@ export const FAQ_ITEMS = [
 ];
 
 export function getCategoriesForTrack(track: ChallengeTrack): CategoryMeta[] {
-  return track === "medical"
-    ? MEDICAL_CHALLENGE_CATEGORIES
-    : ENVIRONMENTAL_CHALLENGE_CATEGORIES;
+  if (track === "medical") return MEDICAL_CHALLENGE_CATEGORIES;
+  if (track === "partnership") return PARTNERSHIP_CHALLENGE_CATEGORIES;
+  return ENVIRONMENTAL_CHALLENGE_CATEGORIES;
 }
 
 export function getCategoryMeta(category: ChallengeCategory): CategoryMeta {
@@ -114,7 +125,10 @@ export function getNextMilestone(hours: number): number | null {
 }
 
 export function challengeTrack(challenge: { track?: ChallengeTrack | null }): ChallengeTrack {
-  return challenge.track ?? "environmental";
+  if (challenge.track === "medical" || challenge.track === "partnership") {
+    return challenge.track;
+  }
+  return "environmental";
 }
 
 export function displayImpactStats(stats: {

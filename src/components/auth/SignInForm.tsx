@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getPartnerHomePath } from "@/lib/partner-routing";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { Button } from "@/components/ui/Button";
 import { FieldError, Input, Label } from "@/components/ui/Input";
@@ -30,14 +31,38 @@ export function SignInForm({ next }: { next?: string }) {
         return;
       }
 
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data: signInData, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
       if (signInError) {
         setError(signInError.message);
         return;
+      }
+
+      const userId = signInData.user?.id;
+      if (userId) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_type, partner_org_id")
+          .eq("id", userId)
+          .single();
+
+        if (profile?.user_type === "partner" && profile.partner_org_id) {
+          const { data: org } = await supabase
+            .from("partner_organizations")
+            .select("status")
+            .eq("id", profile.partner_org_id)
+            .single();
+
+          if (org) {
+            router.push(next?.startsWith("/partner") ? next : getPartnerHomePath(org));
+            router.refresh();
+            return;
+          }
+        }
       }
 
       router.push(next || "/dashboard");
