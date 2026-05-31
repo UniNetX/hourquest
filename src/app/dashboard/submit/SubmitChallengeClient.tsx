@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useDashboardSection } from "@/components/dashboard/DashboardSectionProvider";
 import { IconCloudUpload, IconX } from "@tabler/icons-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
@@ -21,6 +22,7 @@ export default function SubmitChallengeClient({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { goToSection } = useDashboardSection();
   const [challenges, setChallenges] = useState<Challenge[]>(initialChallenges);
   const [challengeId, setChallengeId] = useState(
     searchParams.get("challengeId") ?? "",
@@ -32,6 +34,11 @@ export default function SubmitChallengeClient({
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const id = searchParams.get("challengeId");
+    if (id) setChallengeId(id);
+  }, [searchParams]);
 
   useEffect(() => {
     async function load() {
@@ -117,20 +124,23 @@ export default function SubmitChallengeClient({
       return;
     }
 
-    await fetch("/api/notify-admin-submission", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ submissionId }),
-    });
+    try {
+      await fetch("/api/notify-admin-submission", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ submissionId }),
+      });
+    } catch {
+      // Submission saved; notification email is best-effort.
+    }
 
-    router.push("/dashboard/submissions");
+    goToSection("submissions");
   }
 
   return (
     <div className="mx-auto max-w-xl">
       <Card>
-        <h2 className="text-lg font-medium">Submit a Challenge</h2>
-          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label>Challenge</Label>
               <select

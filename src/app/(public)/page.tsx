@@ -10,6 +10,7 @@ import { ImpactStats } from "@/components/home/ImpactStats";
 import { LeaderboardPreview } from "@/components/home/LeaderboardPreview";
 import { TestimonialsCarousel } from "@/components/home/TestimonialsCarousel";
 import { SectionHeader } from "@/components/marketing/SectionHeader";
+import { dashboardSectionHref, dashboardSubmitHref } from "@/lib/dashboard-nav";
 import { createClient } from "@/lib/supabase/server";
 import type { Challenge } from "@/types/database";
 import { createMetadata } from "@/lib/seo";
@@ -96,12 +97,18 @@ export default async function HomePage() {
   const { featured, stats, leaderboard, stories, user } = await getHomeData();
   const startHref = (id: string) =>
     user
-      ? `/dashboard/submit?challengeId=${id}`
-      : `/signin?next=${encodeURIComponent(`/dashboard/submit?challengeId=${id}`)}`;
+      ? dashboardSubmitHref(id)
+      : `/signin?next=${encodeURIComponent(dashboardSubmitHref(id))}`;
 
   return (
     <PublicShell>
-      <HomeHero />
+      <HomeHero
+        submitHref={
+          user
+            ? dashboardSectionHref("submit")
+            : undefined
+        }
+      />
       <ImpactStats stats={stats} />
       <HowItWorks />
       <TerraServeAppSection />

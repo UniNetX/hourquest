@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { getProfileDisplayName } from "@/lib/profile-display";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function DashboardLayout({
@@ -36,7 +37,13 @@ export default async function DashboardLayout({
 
   return (
     <DashboardShell
-      name={profile?.full_name || "Student"}
+      name={getProfileDisplayName(
+        profile?.full_name,
+        user.email,
+        typeof user.user_metadata?.full_name === "string"
+          ? user.user_metadata.full_name
+          : null,
+      )}
       school={profile?.school_name}
     >
       {children}

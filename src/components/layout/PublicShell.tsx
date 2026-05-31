@@ -1,6 +1,7 @@
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { NavBar } from "@/components/layout/NavBar";
 import { Footer } from "@/components/layout/Footer";
+import { getProfileDisplayName } from "@/lib/profile-display";
 import { createClient } from "@/lib/supabase/server";
 
 export async function PublicShell({ children }: { children: React.ReactNode }) {
@@ -20,7 +21,13 @@ export async function PublicShell({ children }: { children: React.ReactNode }) {
         .single();
 
       navUser = {
-        name: profile?.full_name || user.email?.split("@")[0] || "Student",
+        name: getProfileDisplayName(
+          profile?.full_name,
+          user.email,
+          typeof user.user_metadata?.full_name === "string"
+            ? user.user_metadata.full_name
+            : null,
+        ),
         avatarUrl: profile?.avatar_url,
       };
     }

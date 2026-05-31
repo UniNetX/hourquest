@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import { useDashboardSection } from "@/components/dashboard/DashboardSectionProvider";
 import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { CategoryIcon } from "@/components/challenges/CategoryIcon";
@@ -17,6 +17,7 @@ export function SubmissionsList({
 }: {
   submissions: ChallengeSubmission[];
 }) {
+  const { goToSection } = useDashboardSection();
   const [filter, setFilter] = useState<SubmissionStatus | "all">("all");
 
   const counts = useMemo(
@@ -74,12 +75,15 @@ export function SubmissionsList({
                   </p>
                 )}
                 {sub.status === "rejected" && (
-                  <Link
-                    href={`/dashboard/submit?challengeId=${sub.challenge_id}`}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      goToSection("submit", { challengeId: sub.challenge_id })
+                    }
                     className="mt-2 inline-block text-sm font-medium text-primary hover:underline"
                   >
                     Resubmit
-                  </Link>
+                  </button>
                 )}
               </div>
             </div>

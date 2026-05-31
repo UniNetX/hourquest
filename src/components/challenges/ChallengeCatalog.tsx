@@ -11,7 +11,7 @@ import {
   challengeTrack,
   getCategoriesForTrack,
 } from "@/lib/challenges/constants";
-import { createClient } from "@/lib/supabase/client";
+import { dashboardSubmitHref } from "@/lib/dashboard-nav";
 import type { Challenge, ChallengeCategory, ChallengeTrack } from "@/types/database";
 
 const filterBtn =
@@ -54,8 +54,7 @@ export function ChallengeCatalog({
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const [challenges, setChallenges] =
-    useState<Challenge[]>(initialChallenges);
+  const [challenges] = useState<Challenge[]>(initialChallenges);
   const [track, setTrack] = useState<TrackFilter>(() =>
     parseTrack(searchParams.get("track")),
   );
@@ -108,31 +107,6 @@ export function ChallengeCatalog({
     updateFilters(nextTrack, nextCategory);
   }
 
-  useEffect(() => {
-    const supabase = createClient();
-    const channel = supabase
-      .channel("challenges-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "challenges" },
-        async () => {
-          const { data } = await supabase
-            .from("challenges")
-            .select("*")
-            .eq("active", true)
-            .order("track")
-            .order("category")
-            .order("sort_order");
-          if (data) setChallenges(data as Challenge[]);
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
   const trackCategories = isChallengeTrack(track) ? getCategoriesForTrack(track) : [];
 
   const filtered = useMemo(() => {
@@ -151,8 +125,8 @@ export function ChallengeCatalog({
 
   const startHref = (id: string) =>
     isLoggedIn
-      ? `/dashboard/submit?challengeId=${id}`
-      : `/signin?next=${encodeURIComponent(`/dashboard/submit?challengeId=${id}`)}`;
+      ? dashboardSubmitHref(id)
+      : `/signin?next=${encodeURIComponent(dashboardSubmitHref(id))}`;
 
   return (
     <>
@@ -240,9 +214,9 @@ export function ChallengeCatalog({
                 </Button>
               </div>
             ) : (
-              filtered.map((challenge) => (
+              filtered.map((challenge, index) => (
                 <ChallengeCard
-                  key={challenge.id}
+                  key={challenge.id ?? `challenge-${index}`}
                   challenge={challenge}
                   startHref={startHref(challenge.id)}
                 />

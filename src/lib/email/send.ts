@@ -32,15 +32,15 @@ export async function sendChallengeEmail({
   const templates: Record<EmailType, { subject: string; html: string }> = {
     submission_approved: {
       subject: "Your hours have been verified!",
-      html: `<p>Hi ${data.studentName},</p><p>Your submission for <strong>${data.challengeTitle}</strong> was approved. You earned <strong>${data.hoursEarned}</strong> hours.</p><p>New total: ${data.totalHours} hours.</p><p><a href="${SITE_URL}/dashboard/certificates">View certificates</a></p>`,
+      html: `<p>Hi ${data.studentName},</p><p>Your submission for <strong>${data.challengeTitle}</strong> was approved. You earned <strong>${data.hoursEarned}</strong> hours.</p><p>New total: ${data.totalHours} hours.</p><p><a href="${SITE_URL}/dashboard#certificates">View certificates</a></p>`,
     },
     submission_rejected: {
       subject: "Feedback on your HourQuest submission",
-      html: `<p>Your submission for <strong>${data.challengeTitle}</strong> needs improvement.</p><p>Reason: ${data.rejectionReason}</p><p><a href="${SITE_URL}/dashboard/submit">Resubmit</a></p>`,
+      html: `<p>Your submission for <strong>${data.challengeTitle}</strong> needs improvement.</p><p>Reason: ${data.rejectionReason}</p><p><a href="${SITE_URL}/dashboard#submit">Resubmit</a></p>`,
     },
     certificate_unlocked: {
       subject: `You've earned your ${data.milestone} Hour Certificate!`,
-      html: `<p>Congratulations! You've unlocked your ${data.milestone} hour certificate.</p><p><a href="${SITE_URL}/dashboard/certificates">Download your certificate</a></p>`,
+      html: `<p>Congratulations! You've unlocked your ${data.milestone} hour certificate.</p><p><a href="${SITE_URL}/dashboard#certificates">Download your certificate</a></p>`,
     },
     welcome: {
       subject: "Welcome to HourQuest!",

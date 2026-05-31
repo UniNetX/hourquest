@@ -5,7 +5,7 @@ import Link from "next/link";
 import { PageHero } from "@/components/layout/PageHero";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
+import { withBrowserSupabase } from "@/lib/supabase/safe";
 
 type IndividualRow = {
   id: string;
@@ -39,13 +39,15 @@ export function LeaderboardView({
 
   async function loadIndividual(next: "week" | "all") {
     setPeriod(next);
-    const supabase = createClient();
     const table =
       next === "week"
         ? "individual_leaderboard_weekly"
         : "individual_leaderboard_all_time";
-    const { data } = await supabase.from(table).select("*").limit(50);
-    setIndividual((data as IndividualRow[]) ?? []);
+    const { data } = await withBrowserSupabase(async (supabase) => {
+      const { data: rows } = await supabase.from(table).select("*").limit(50);
+      return (rows as IndividualRow[] | null) ?? null;
+    });
+    if (data) setIndividual(data);
   }
 
   const rankColor = (rank: number) => {

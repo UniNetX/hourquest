@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { withBrowserSupabase } from "@/lib/supabase/safe";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { Button } from "@/components/ui/Button";
 import { Input, Label } from "@/components/ui/Input";
@@ -14,31 +14,40 @@ export function SchoolCollectionModal() {
 
   useEffect(() => {
     async function check() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: user } = await withBrowserSupabase(async (supabase) => {
+        const { data } = await supabase.auth.getUser();
+        return data.user;
+      });
       if (!user) return;
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("school_name")
-        .eq("id", user.id)
-        .single();
+
+      const { data: profile } = await withBrowserSupabase(async (supabase) => {
+        const { data } = await supabase
+          .from("profiles")
+          .select("school_name")
+          .eq("id", user.id)
+          .single();
+        return data;
+      });
       if (!profile?.school_name) setOpen(true);
     }
-    check();
+    void check();
   }, []);
 
   async function save() {
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: user } = await withBrowserSupabase(async (supabase) => {
+      const { data } = await supabase.auth.getUser();
+      return data.user;
+    });
     if (!user) return;
-    await supabase
-      .from("profiles")
-      .update({ school_name: school })
-      .eq("id", user.id);
+
+    await withBrowserSupabase(async (supabase) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ school_name: school })
+        .eq("id", user.id);
+      return error;
+    });
+
     setOpen(false);
     router.refresh();
   }

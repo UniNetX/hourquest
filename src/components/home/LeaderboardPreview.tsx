@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
+import { withBrowserSupabase } from "@/lib/supabase/safe";
 
 type LeaderboardRow = {
   id: string;
@@ -24,27 +24,31 @@ export function LeaderboardPreview({
   const [rows, setRows] = useState(initialData);
 
   async function loadWeekly() {
-    const supabase = createClient();
-    const { data } = await supabase
-      .from("individual_leaderboard_weekly")
-      .select("*")
-      .limit(3);
-    setRows((data as LeaderboardRow[]) ?? []);
+    const { data } = await withBrowserSupabase(async (supabase) => {
+      const { data: rows } = await supabase
+        .from("individual_leaderboard_weekly")
+        .select("*")
+        .limit(3);
+      return (rows as LeaderboardRow[] | null) ?? null;
+    });
+    if (data) setRows(data);
   }
 
   async function loadAllTime() {
-    const supabase = createClient();
-    const { data } = await supabase
-      .from("individual_leaderboard_all_time")
-      .select("*")
-      .limit(3);
-    setRows((data as LeaderboardRow[]) ?? []);
+    const { data } = await withBrowserSupabase(async (supabase) => {
+      const { data: rows } = await supabase
+        .from("individual_leaderboard_all_time")
+        .select("*")
+        .limit(3);
+      return (rows as LeaderboardRow[] | null) ?? null;
+    });
+    if (data) setRows(data);
   }
 
   function switchMode(next: "week" | "all") {
     setMode(next);
-    if (next === "week") loadWeekly();
-    else loadAllTime();
+    if (next === "week") void loadWeekly();
+    else void loadAllTime();
   }
 
   return (

@@ -1,6 +1,7 @@
 "use client";
 
 import { IconStarFilled } from "@tabler/icons-react";
+import { getDisplayInitial } from "@/lib/profile-display";
 import { cn } from "@/lib/utils";
 
 export type Testimonial = {
@@ -66,7 +67,7 @@ function toTestimonials(stories: StoryRow[]): Testimonial[] {
     id: s.id,
     rating: s.rating,
     comment: s.comment,
-    name: s.profiles?.full_name ?? "Student",
+    name: s.profiles?.full_name ?? "Anonymous",
     school: s.profiles?.school_name ?? "Verified student",
   }));
 }
@@ -84,7 +85,7 @@ function TestimonialCard({ item }: { item: Testimonial }) {
       </p>
       <div className="mt-4 flex items-center gap-3 border-t border-border pt-4">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-light text-sm font-semibold text-primary-dark">
-          {item.name.charAt(0)}
+          {getDisplayInitial(item.name)}
         </div>
         <div>
           <p className="text-sm font-semibold">{item.name}</p>
