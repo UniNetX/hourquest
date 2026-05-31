@@ -23,6 +23,10 @@ import { IconGripVertical } from "@tabler/icons-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { DifficultyBadge } from "@/components/ui/DifficultyBadge";
+import {
+  AdminSubmissionReviewCard,
+  type SubmissionForReview,
+} from "@/components/admin/AdminSubmissionReviewCard";
 import { ChallengeCard } from "@/components/challenges/ChallengeCard";
 import { CategoryIcon } from "@/components/challenges/CategoryIcon";
 import { Input, Label, Textarea } from "@/components/ui/Input";
@@ -174,7 +178,9 @@ export function AdminDashboard({
   const [tab, setTab] = useState<
     "submissions" | "challenges" | "stories" | "users" | "partners"
   >("submissions");
-  const [submissions, setSubmissions] = useState(initialSubmissions);
+  const [submissions, setSubmissions] = useState(
+    initialSubmissions as SubmissionForReview[],
+  );
   const [challenges, setChallenges] = useState(initialChallenges);
   const [stories, setStories] = useState(initialStories as StudentStoryWithProfile[]);
   const [homepageTestimonials, setHomepageTestimonials] = useState(
@@ -207,7 +213,12 @@ export function AdminDashboard({
   const loadData = useCallback(async () => {
     const supabase = createClient();
     const [subs, chals, sts, homepage, profs, partnerRows] = await Promise.all([
-      supabase.from("challenge_submissions").select("*").order("submitted_at", { ascending: false }),
+      supabase
+        .from("challenge_submissions")
+        .select(
+          "*, profiles(full_name, school_name), challenges(description, proof_instructions, difficulty, hours_earned, points)",
+        )
+        .order("submitted_at", { ascending: false }),
       supabase.from("challenges").select("*").order("track").order("category").order("sort_order"),
       supabase
         .from("student_stories")
@@ -445,37 +456,21 @@ export function AdminDashboard({
         </div>
 
         {tab === "submissions" && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <h2 className="text-lg font-medium">Pending Submissions</h2>
             {pendingSubs.length === 0 ? (
               <Card className="text-sm text-text-muted">No pending submissions.</Card>
             ) : (
               pendingSubs.map((sub) => (
-                <Card key={sub.id}>
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="text-[13px] font-medium">{sub.challenge_title}</p>
-                      <p className="text-[11px] text-text-caption">
-                        User {sub.user_id.slice(0, 8)}… · {sub.date_completed}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        className="px-3 py-1 text-[12px]"
-                        onClick={() => reviewSubmission(sub.id, "approve")}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        variant="danger"
-                        className="px-3 py-1 text-[12px]"
-                        onClick={() => setRejectId(sub.id)}
-                      >
-                        Reject
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
+                <AdminSubmissionReviewCard
+                  key={sub.id}
+                  submission={sub as SubmissionForReview}
+                  onApprove={(id) => reviewSubmission(id, "approve")}
+                  onReject={(id) => {
+                    setRejectId(id);
+                    setRejectReason("");
+                  }}
+                />
               ))
             )}
           </div>

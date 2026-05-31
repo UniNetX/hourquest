@@ -46,7 +46,9 @@ export default async function AdminPage() {
       .select("*", { count: "exact", head: true }),
     supabase
       .from("challenge_submissions")
-      .select("*")
+      .select(
+        "*, profiles(full_name, school_name), challenges(description, proof_instructions, difficulty, hours_earned, points)",
+      )
       .order("submitted_at", { ascending: false }),
     supabase.from("challenges").select("*").order("category").order("sort_order"),
     supabase
