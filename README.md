@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TerraServe Challenges Web
 
-## Getting Started
+Next.js web app for [challenges.terraserve.org](https://challenges.terraserve.org) — environmental volunteer challenges with verified hours and certificates.
 
-First, run the development server:
+## Setup
+
+1. Copy `.env.example` to `.env.local` and fill in Supabase + admin email values.
+2. Apply the database schema — open **SQL Editor** in Supabase and run the entire contents of [`supabase/RUN_IN_SQL_EDITOR.sql`](supabase/RUN_IN_SQL_EDITOR.sql). Then verify: `node scripts/verify-supabase.mjs`
+3. Add your admin email to `challenge_admins` (included in RUN_IN_SQL_EDITOR.sql as `markustang08@gmail.com`).
+4. Configure Supabase Auth email templates for password reset (Auth → Email).
+
+## Development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploy (Vercel)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Import this repo in Vercel.
+2. Set environment variables from `.env.example`.
+3. Add custom domain `challenges.terraserve.org`.
+4. Deploy Supabase Edge Functions from `supabase/functions/` if using serverless email/review paths.
 
-## Learn More
+## Stack
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Next.js App Router + TypeScript + Tailwind CSS v4
+- Supabase Auth, Postgres, Storage, Realtime
+- Resend for transactional email

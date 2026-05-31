@@ -1,0 +1,82 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { AuthCard } from "@/components/auth/AuthCard";
+import { Button } from "@/components/ui/Button";
+import { FieldError, Input, Label } from "@/components/ui/Input";
+
+export function SignInForm({ next }: { next?: string }) {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    const supabase = createClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    setLoading(false);
+    if (signInError) {
+      setError(signInError.message);
+      return;
+    }
+    router.push(next || "/dashboard");
+    router.refresh();
+  }
+
+  return (
+    <AuthCard
+      title="Sign in to TerraServe"
+      subtitle="Access your dashboard and submit challenge proof."
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label>Email Address</Label>
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+          />
+        </div>
+        <div>
+          <div className="mb-1.5 flex items-center justify-between">
+            <Label>Password</Label>
+            <a
+              href="/forgot-password"
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              Forgot password?
+            </a>
+          </div>
+          <Input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+          />
+        </div>
+        <FieldError message={error ?? undefined} />
+        <Button type="submit" className="w-full" size="lg" disabled={loading}>
+          {loading ? "Signing in..." : "Sign In"}
+        </Button>
+      </form>
+      <p className="mt-6 text-center text-sm text-text-muted">
+        Don&apos;t have an account?{" "}
+        <a href="/signup" className="font-medium text-primary hover:underline">
+          Sign Up
+        </a>
+      </p>
+    </AuthCard>
+  );
+}
