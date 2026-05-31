@@ -43,6 +43,7 @@ export function NavBar({
 
   useEffect(() => {
     setOpen(false);
+    setAboutOpen(false);
     setMobileAboutOpen(false);
   }, [pathname]);
 
@@ -123,53 +124,51 @@ export function NavBar({
               </Link>
             );
           })}
-          {!user && (
-            <div ref={aboutRef} className="relative">
-              <button
-                type="button"
-                className={cn(
-                  linkClass(isAboutActive(pathname)),
-                  "inline-flex items-center gap-1",
-                )}
-                aria-expanded={aboutOpen}
-                aria-haspopup="true"
-                onClick={() => setAboutOpen((prev) => !prev)}
-              >
-                About
-                <IconChevronDown
-                  size={16}
-                  stroke={2}
-                  className={cn(
-                    "transition-transform",
-                    aboutOpen && "rotate-180",
-                  )}
-                />
-              </button>
-              {aboutOpen && (
-                <div
-                  className="absolute left-0 top-full z-50 mt-1 min-w-[11rem] rounded-md border border-border bg-page py-1 shadow-lg"
-                  role="menu"
-                >
-                  {aboutLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      role="menuitem"
-                      className={cn(
-                        "block px-4 py-2 text-sm font-medium transition-colors",
-                        pathname === link.href
-                          ? "bg-primary-light text-primary-dark"
-                          : "text-text-muted hover:bg-primary-light/50 hover:text-primary-dark",
-                      )}
-                      onClick={() => setAboutOpen(false)}
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
-                </div>
+          <div ref={aboutRef} className="relative">
+            <button
+              type="button"
+              className={cn(
+                linkClass(isAboutActive(pathname)),
+                "inline-flex items-center gap-1",
               )}
-            </div>
-          )}
+              aria-expanded={aboutOpen}
+              aria-haspopup="true"
+              onClick={() => setAboutOpen((prev) => !prev)}
+            >
+              About
+              <IconChevronDown
+                size={16}
+                stroke={2}
+                className={cn(
+                  "transition-transform",
+                  aboutOpen && "rotate-180",
+                )}
+              />
+            </button>
+            {aboutOpen && (
+              <div
+                className="absolute left-0 top-full z-50 mt-1 min-w-[11rem] rounded-md border border-border bg-page py-1 shadow-lg"
+                role="menu"
+              >
+                {aboutLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    role="menuitem"
+                    className={cn(
+                      "block px-4 py-2 text-sm font-medium transition-colors",
+                      pathname === link.href
+                        ? "bg-primary-light text-primary-dark"
+                        : "text-text-muted hover:bg-primary-light/50 hover:text-primary-dark",
+                    )}
+                    onClick={() => setAboutOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
@@ -230,42 +229,38 @@ export function NavBar({
                   </Link>
                 );
               })}
-              {!user && (
-                <>
-                  <button
-                    type="button"
-                    className={cn(
-                      linkClass(isAboutActive(pathname)),
-                      "flex w-full items-center justify-between text-left",
-                    )}
-                    aria-expanded={mobileAboutOpen}
-                    onClick={() => setMobileAboutOpen((prev) => !prev)}
-                  >
-                    About
-                    <IconChevronDown
-                      size={16}
-                      stroke={2}
-                      className={cn(
-                        "transition-transform",
-                        mobileAboutOpen && "rotate-180",
-                      )}
-                    />
-                  </button>
-                  {mobileAboutOpen && (
-                    <div className="ml-3 flex flex-col gap-0.5 border-l border-border pl-3">
-                      {aboutLinks.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          onClick={() => setOpen(false)}
-                          className={linkClass(pathname === link.href)}
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
-                    </div>
+              <button
+                type="button"
+                className={cn(
+                  linkClass(isAboutActive(pathname)),
+                  "flex w-full items-center justify-between text-left",
+                )}
+                aria-expanded={mobileAboutOpen}
+                onClick={() => setMobileAboutOpen((prev) => !prev)}
+              >
+                About
+                <IconChevronDown
+                  size={16}
+                  stroke={2}
+                  className={cn(
+                    "transition-transform",
+                    mobileAboutOpen && "rotate-180",
                   )}
-                </>
+                />
+              </button>
+              {mobileAboutOpen && (
+                <div className="ml-3 flex flex-col gap-0.5 border-l border-border pl-3">
+                  {aboutLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setOpen(false)}
+                      className={linkClass(pathname === link.href)}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
               )}
               <div className="mt-4 space-y-2 border-t border-border pt-4">
                 <Button
