@@ -17,12 +17,11 @@ import type { Challenge, ChallengeCategory, ChallengeTrack } from "@/types/datab
 const filterBtn =
   "rounded-sm border px-4 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2";
 
-type TrackFilter = ChallengeTrack | "all" | "partnership";
+type TrackFilter = ChallengeTrack | "all";
 
 const TRACK_FILTERS: { id: TrackFilter; label: string }[] = [
   { id: "all", label: "All" },
   ...CHALLENGE_TRACKS,
-  { id: "partnership", label: "Partnership" },
 ];
 
 function parseTrack(value: string | null): TrackFilter {
@@ -119,9 +118,7 @@ export function ChallengeCatalog({
         async () => {
           const { data } = await supabase
             .from("challenges")
-            .select(
-              "*, partner_organization:partner_organizations(id, name, logo_url, description)",
-            )
+            .select("*")
             .eq("active", true)
             .order("track")
             .order("category")

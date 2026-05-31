@@ -16,7 +16,7 @@ export type CategoryMeta = {
 export const CHALLENGE_TRACKS: { id: ChallengeTrack; label: string }[] = [
   { id: "environmental", label: "Environmental" },
   { id: "medical", label: "Medical" },
-  { id: "partnership", label: "Partnership" },
+  { id: "partnership", label: "Partnership Challenges" },
 ];
 
 export const PARTNERSHIP_CHALLENGE_CATEGORIES: CategoryMeta[] = [

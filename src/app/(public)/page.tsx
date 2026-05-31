@@ -8,7 +8,7 @@ import { HowItWorks } from "@/components/home/HowItWorks";
 import { TerraServeAppSection } from "@/components/home/TerraServeAppSection";
 import { ImpactStats } from "@/components/home/ImpactStats";
 import { LeaderboardPreview } from "@/components/home/LeaderboardPreview";
-import { ReviewCarousel } from "@/components/home/ReviewCarousel";
+import { TestimonialsCarousel } from "@/components/home/TestimonialsCarousel";
 import { SectionHeader } from "@/components/marketing/SectionHeader";
 import { createClient } from "@/lib/supabase/server";
 import type { Challenge } from "@/types/database";
@@ -146,18 +146,16 @@ export default async function HomePage() {
           <LeaderboardPreview initialData={leaderboard} />
         </div>
       </section>
-      {stories.length > 0 && (
-        <section className="section-alt section-y">
-          <div className="section-container">
-            <SectionHeader
-              eyebrow="Stories"
-              title="What Students Are Saying"
-              subtitle="Hear from students who have earned verified hours with HourQuest."
-            />
-            <ReviewCarousel stories={stories as never[]} />
-          </div>
-        </section>
-      )}
+      <section className="section-alt section-y">
+        <div className="section-container">
+          <SectionHeader
+            eyebrow="Testimonials"
+            title="What Students Are Saying"
+            subtitle="Hear from students earning verified environmental and medical service hours with HourQuest."
+          />
+          <TestimonialsCarousel stories={stories as never[]} />
+        </div>
+      </section>
       <CtaBand
         title="Ready to Get Started?"
         subtitle="Join students earning verified volunteer hours through real environmental and health service."
