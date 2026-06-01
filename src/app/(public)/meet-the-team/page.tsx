@@ -30,7 +30,6 @@ const vicePresident: TeamMember = {
 const officers: TeamMember[] = [
   { name: "Sanjeev Sundar", role: "Officer", initials: "SS" },
   { name: "Rutvik Garige", role: "Officer", initials: "RG" },
-  { name: "Sri Pav", role: "Officer", initials: "SP" },
   { name: "Aahil Raffe", role: "Officer", initials: "AR" },
 ];
 
