@@ -19,14 +19,12 @@ type TeamMember = {
 const coFounders: TeamMember[] = [
   { name: "Mark Tang", role: "Co-Founder", initials: "MT" },
   { name: "Sricharan Karthigeyan", role: "Co-Founder", initials: "SK" },
-  { name: "Janav", role: "Co-Founder", initials: "J" },
 ];
 
-const vicePresident: TeamMember = {
-  name: "Atharva Chobe",
-  role: "Vice President",
-  initials: "AC",
-};
+const vicePresidents: TeamMember[] = [
+  { name: "Atharva Chobe", role: "Vice President", initials: "AC" },
+  { name: "Janav Mistry", role: "Vice President", initials: "JM" },
+];
 
 const officers: TeamMember[] = [
   { name: "Sanjeev Sundar", role: "Officer", initials: "SS" },
@@ -89,9 +87,9 @@ export default function MeetTheTeamPage() {
         <div className="section-container max-w-4xl space-y-12">
           <TeamSection title="Co-Founders" members={coFounders} columns={2} />
           <TeamSection
-            title="Vice President"
-            members={[vicePresident]}
-            columns={1}
+            title="Vice Presidents"
+            members={vicePresidents}
+            columns={2}
           />
           <TeamSection title="Officers" members={officers} columns={4} />
         </div>
