@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Button } from "@/components/ui/Button";
 import { SectionHeader } from "@/components/marketing/SectionHeader";
 
 export function TerraServeAppSection() {
@@ -27,6 +28,11 @@ export function TerraServeAppSection() {
             challenges; use TerraServe when you want hyperlocal org listings and
             event check-ins on your phone.
           </p>
+          <div className="mt-8">
+            <Button href="/download" variant="primary" size="lg">
+              Download TerraServe
+            </Button>
+          </div>
         </div>
       </div>
     </section>
