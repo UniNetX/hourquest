@@ -19,6 +19,7 @@ type TeamMember = {
 const coFounders: TeamMember[] = [
   { name: "Mark Tang", role: "Co-Founder", initials: "MT" },
   { name: "Sricharan Karthigeyan", role: "Co-Founder", initials: "SK" },
+  { name: "Janav", role: "Co-Founder", initials: "J" },
 ];
 
 const vicePresident: TeamMember = {
