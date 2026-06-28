@@ -14,7 +14,12 @@ export default async function LeaderboardPage() {
   const [individualRes, schoolsRes] = supabase
     ? await Promise.all([
         supabase.from("individual_leaderboard_all_time").select("*").limit(50),
-        supabase.from("school_leaderboard").select("*").limit(50),
+        supabase
+          .from("school_leaderboard")
+          .select("*")
+          .order("total_hours", { ascending: false })
+          .order("school_name", { ascending: true })
+          .limit(50),
       ])
     : [{ data: [] }, { data: [] }];
 

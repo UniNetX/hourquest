@@ -221,10 +221,14 @@ from (
 ) a join public.profiles p on p.id = a.user_id where a.weekly_hours > 0;
 
 create or replace view public.school_leaderboard as
-select p.school_name, count(distinct p.id) as student_count, coalesce(sum(p.total_verified_hours),0) as total_hours
+select
+  min(trim(p.school_name)) as school_name,
+  count(distinct p.id) as student_count,
+  coalesce(sum(p.total_verified_hours), 0) as total_hours
 from public.profiles p
 where p.school_name is not null and trim(p.school_name) <> ''
-group by p.school_name having count(distinct p.id) >= 1;
+group by lower(trim(p.school_name))
+having count(distinct p.id) >= 1;
 
 grant select on public.individual_leaderboard_all_time to anon, authenticated;
 grant select on public.individual_leaderboard_weekly to anon, authenticated;

@@ -5,6 +5,10 @@ import Link from "next/link";
 import { PageHero } from "@/components/layout/PageHero";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
+import {
+  normalizeSchoolLeaderboard,
+  type SchoolLeaderboardRow,
+} from "@/lib/leaderboard";
 import { withBrowserSupabase } from "@/lib/supabase/safe";
 
 type IndividualRow = {
@@ -16,12 +20,6 @@ type IndividualRow = {
   rank: number;
 };
 
-type SchoolRow = {
-  school_name: string;
-  student_count: number;
-  total_hours: number;
-};
-
 const pillBtn =
   "rounded-sm border px-4 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2";
 
@@ -30,12 +28,12 @@ export function LeaderboardView({
   initialSchools,
 }: {
   initialIndividual: IndividualRow[];
-  initialSchools: SchoolRow[];
+  initialSchools: SchoolLeaderboardRow[];
 }) {
   const [type, setType] = useState<"individual" | "schools">("individual");
   const [period, setPeriod] = useState<"week" | "all">("all");
   const [individual, setIndividual] = useState(initialIndividual);
-  const [schools] = useState(initialSchools);
+  const schools = normalizeSchoolLeaderboard(initialSchools);
 
   async function loadIndividual(next: "week" | "all") {
     setPeriod(next);

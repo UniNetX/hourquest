@@ -34,6 +34,7 @@ export default function SubmitChallengeClient({
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const selectedChallenge = challenges.find((c) => c.id === challengeId);
 
   useEffect(() => {
     const id = searchParams.get("challengeId");
@@ -163,6 +164,17 @@ export default function SubmitChallengeClient({
                 ))}
               </select>
             </div>
+
+            {selectedChallenge?.proof_instructions && (
+              <div className="rounded-xl border border-primary-mid/40 bg-primary-light/40 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-text-caption">
+                  Proof instructions
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-text-muted whitespace-pre-wrap">
+                  {selectedChallenge.proof_instructions}
+                </p>
+              </div>
+            )}
 
             <div>
               <Label>Photo Proof (1–3 photos, max 10MB each)</Label>

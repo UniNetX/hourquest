@@ -5,9 +5,23 @@ Next.js web app for [challenges.terraserve.org](https://challenges.terraserve.or
 ## Setup
 
 1. Copy `.env.example` to `.env.local` and fill in Supabase + admin email values.
-2. Apply the database schema — open **SQL Editor** in Supabase and run the entire contents of [`supabase/RUN_IN_SQL_EDITOR.sql`](supabase/RUN_IN_SQL_EDITOR.sql). Then verify: `node scripts/verify-supabase.mjs`
-3. Add your admin email to `challenge_admins` (included in RUN_IN_SQL_EDITOR.sql as `markustang08@gmail.com`).
-4. Configure Supabase Auth email templates for password reset (Auth → Email).
+2. Apply the database schema — either:
+   - **CLI (recommended):** log into the Supabase account that owns project `zfexfatuhcqmwozouwtk`, then:
+     ```bash
+     supabase login
+     export SUPABASE_DB_PASSWORD='your-database-password'  # Dashboard → Settings → Database
+     npm run db:push
+     ```
+   - **SQL Editor:** run [`supabase/RUN_IN_SQL_EDITOR.sql`](supabase/RUN_IN_SQL_EDITOR.sql) for a fresh project, or run individual files under `supabase/migrations/` for updates.
+3. Verify: `node scripts/verify-supabase.mjs`
+4. Add your admin email to `challenge_admins` (included in RUN_IN_SQL_EDITOR.sql as `markustang08@gmail.com`).
+5. Configure Supabase Auth email templates for password reset (Auth → Email).
+
+### Supabase CLI troubleshooting
+
+- `Cannot find project ref` → run `supabase init` (already done in this repo) then `npm run db:link` or `npm run db:push`.
+- `Your account does not have the necessary privileges` → `supabase login` with the account that owns the HourQuest project (`zfexfatuhcqmwozouwtk`), not a different Supabase account.
+- `IPv6 is not supported` → complete `supabase link` with your database password; the CLI stores an IPv4 pooler URL automatically.
 
 ## Development
 
