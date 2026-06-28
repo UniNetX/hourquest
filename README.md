@@ -36,9 +36,15 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Deploy (Vercel)
 
 1. Import this repo in Vercel.
-2. Set environment variables from `.env.example`.
-3. Add custom domain `challenges.terraserve.org`.
-4. Deploy Supabase Edge Functions from `supabase/functions/` if using serverless email/review paths.
+2. Set environment variables from `.env.example` (set `NEXT_PUBLIC_SITE_URL=https://challenges.terraserve.org`).
+3. Add custom domain `challenges.terraserve.org` in Vercel → Project → Settings → Domains.
+4. In your DNS provider for `terraserve.org`, add a **CNAME** record:
+   - **Name:** `challenges`
+   - **Value:** the target Vercel shows (usually `cname.vercel-dns.com`)
+5. After DNS propagates, verify:
+   - `https://challenges.terraserve.org/robots.txt`
+   - `https://challenges.terraserve.org/sitemap.xml`
+6. Deploy Supabase Edge Functions from `supabase/functions/` if using serverless email/review paths.
 
 ## Stack
 

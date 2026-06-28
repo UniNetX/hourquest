@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import { getCanonicalSiteUrl } from "@/lib/site-url";
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://challenges.terraserve.org";
+const siteUrl = getCanonicalSiteUrl();
 
 const googleSiteVerification =
   process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
