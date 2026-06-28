@@ -6,12 +6,13 @@ Next.js web app for [challenges.terraserve.org](https://challenges.terraserve.or
 
 1. Copy `.env.example` to `.env.local` and fill in Supabase + admin email values.
 2. Apply the database schema — either:
-   - **CLI (recommended):** log into the Supabase account that owns project `zfexfatuhcqmwozouwtk`, then:
+   - **CLI:** add your database connection string to `.env.local`, then:
      ```bash
-     supabase login
-     export SUPABASE_DB_PASSWORD='your-database-password'  # Dashboard → Settings → Database
+     # Dashboard → Settings → Database → Session pooler (port 5432)
+     # Add to .env.local: SUPABASE_DB_URL=postgresql://postgres.zfexfatuhcqmwozouwtk:...
      npm run db:push
      ```
+     No `supabase login` or `supabase link` required — only the database password.
    - **SQL Editor:** run [`supabase/RUN_IN_SQL_EDITOR.sql`](supabase/RUN_IN_SQL_EDITOR.sql) for a fresh project, or run individual files under `supabase/migrations/` for updates.
 3. Verify: `node scripts/verify-supabase.mjs`
 4. Add your admin email to `challenge_admins` (included in RUN_IN_SQL_EDITOR.sql as `markustang08@gmail.com`).
@@ -19,9 +20,9 @@ Next.js web app for [challenges.terraserve.org](https://challenges.terraserve.or
 
 ### Supabase CLI troubleshooting
 
-- `Cannot find project ref` → run `supabase init` (already done in this repo) then `npm run db:link` or `npm run db:push`.
-- `Your account does not have the necessary privileges` → `supabase login` with the account that owns the HourQuest project (`zfexfatuhcqmwozouwtk`), not a different Supabase account.
-- `IPv6 is not supported` → complete `supabase link` with your database password; the CLI stores an IPv4 pooler URL automatically.
+- `Cannot find project ref` → use `npm run db:push` with `SUPABASE_DB_URL` in `.env.local` (no link needed).
+- `Your account does not have the necessary privileges` → ignore `supabase link`; set `SUPABASE_DB_URL` instead and run `npm run db:push`.
+- `failed to connect to postgres` → copy the **Session pooler** URI (port 5432) from the dashboard; check region in the hostname matches your project.
 
 ## Development
 

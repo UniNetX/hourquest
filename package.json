@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:link": "supabase link --project-ref zfexfatuhcqmwozouwtk",
-    "db:push": "bash scripts/supabase-db-push.sh"
+    "db:push": "node scripts/supabase-db-push.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
