@@ -34,14 +34,16 @@ export function ChallengeCard({
       )}
       <DifficultyBadge difficulty={challenge.difficulty} compact />
       <h3 className="mt-3 font-display">{challenge.title}</h3>
-      <p className="line-clamp-3 flex-1">{challenge.description}</p>
+      <div className="min-h-0 flex-1">
+        <p className="pillar-card__body line-clamp-3">{challenge.description}</p>
+      </div>
       {challenge.proof_instructions && (
-        <p className="mt-2 text-xs leading-relaxed text-text-muted">
+        <p className="mt-2 shrink-0 line-clamp-2 text-xs leading-relaxed text-text-muted">
           <span className="font-semibold text-text-caption">Proof: </span>
           {challenge.proof_instructions}
         </p>
       )}
-      <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+      <div className="mt-auto flex items-center justify-between border-t border-border pt-4">
         <span className="text-xs font-semibold text-primary-dark">
           {challenge.hours_earned} hrs
         </span>

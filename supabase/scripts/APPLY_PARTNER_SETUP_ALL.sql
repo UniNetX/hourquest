@@ -1,3 +1,17 @@
+-- =============================================================================
+-- HOURQUEST — ONE FILE FOR SUPABASE SQL EDITOR
+-- Project: zfexfatuhcqmwozouwtk
+--
+-- DELETE your other SQL Editor tabs. Keep only this file.
+-- Paste → Run once. Safe to re-run (IF NOT EXISTS, CREATE OR REPLACE).
+--
+-- RECOMMENDED: run supabase/scripts/APPLY_PARTNER_MINIMAL.sql first and confirm
+-- the last row shows partner_organizations. Then run this full file.
+--
+-- Includes: partner tables, signup trigger, admin RPCs, backfill, admin sync
+-- After success: npm run verify:supabase
+-- =============================================================================
+
 -- Partner organizations, partnership track challenges, partner RPCs
 
 -- Partner organizations
@@ -506,6 +520,103 @@ begin
 end;
 $$;
 
+-- Core admin RPCs required before GRANTs (missing on partial DBs — without these,
+-- GRANT below fails and Supabase SQL Editor rolls back the entire script)
+create or replace function public.admin_delete_challenge(p_challenge_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_total integer;
+begin
+  if not public.is_challenges_admin() then
+    raise exception 'Forbidden' using errcode = '42501';
+  end if;
+  select total_submissions into v_total from public.challenges where id = p_challenge_id;
+  if v_total > 0 then
+    raise exception 'Cannot delete';
+  end if;
+  delete from public.challenges where id = p_challenge_id;
+end;
+$$;
+
+create or replace function public.admin_review_submission(
+  p_submission_id uuid,
+  p_action text,
+  p_rejection_reason text default null
+)
+returns public.challenge_submissions
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_sub public.challenge_submissions;
+  v_challenge public.challenges;
+begin
+  if not public.is_challenges_admin() then
+    raise exception 'Forbidden' using errcode = '42501';
+  end if;
+  select * into v_sub from public.challenge_submissions where id = p_submission_id;
+  if not found then
+    raise exception 'Submission not found';
+  end if;
+  if v_sub.status <> 'pending' then
+    raise exception 'Already reviewed';
+  end if;
+  select * into v_challenge from public.challenges where id = v_sub.challenge_id;
+  if p_action = 'approve' then
+    update public.challenge_submissions set
+      status = 'approved',
+      hours_awarded = v_challenge.hours_earned,
+      points_awarded = v_challenge.points,
+      reviewed_at = now(),
+      reviewed_by = auth.uid(),
+      rejection_reason = null
+    where id = p_submission_id
+    returning * into v_sub;
+  elsif p_action = 'reject' then
+    if p_rejection_reason is null or trim(p_rejection_reason) = '' then
+      raise exception 'Rejection reason required';
+    end if;
+    update public.challenge_submissions set
+      status = 'rejected',
+      rejection_reason = p_rejection_reason,
+      reviewed_at = now(),
+      reviewed_by = auth.uid()
+    where id = p_submission_id
+    returning * into v_sub;
+  else
+    raise exception 'Invalid action';
+  end if;
+  return v_sub;
+end;
+$$;
+
+create or replace function public.admin_moderate_story(p_story_id uuid, p_approved boolean)
+returns public.student_stories
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_row public.student_stories;
+begin
+  if not public.is_challenges_admin() then
+    raise exception 'Forbidden' using errcode = '42501';
+  end if;
+  update public.student_stories set
+    approved = p_approved,
+    approved_at = case when p_approved then now() else null end,
+    approved_by = case when p_approved then auth.uid() else null end
+  where id = p_story_id
+  returning * into v_row;
+  return v_row;
+end;
+$$;
+
 grant execute on function public.get_my_partner_org_id() to authenticated;
 grant execute on function public.is_approved_partner() to authenticated;
 grant execute on function public.partner_upsert_challenge(jsonb) to authenticated;
@@ -517,3 +628,104 @@ grant execute on function public.admin_upsert_challenge(jsonb) to authenticated;
 grant execute on function public.admin_reorder_challenges(text, text, uuid[]) to authenticated;
 grant execute on function public.admin_delete_challenge(uuid) to authenticated;
 grant execute on function public.admin_review_submission(uuid, text, text) to authenticated;
+grant execute on function public.admin_moderate_story(uuid, boolean) to authenticated;
+
+-- Backfill partner signups that happened before this migration
+-- Run AFTER supabase/migrations/20260601120000_partner_accounts.sql
+-- Creates pending partner_organizations rows for users who signed up as partners
+-- before the partner migration was applied.
+
+do $$
+declare
+  r record;
+  v_org_id uuid;
+  v_org_name text;
+begin
+  for r in
+    select u.id, u.raw_user_meta_data
+    from auth.users u
+    left join public.profiles p on p.id = u.id
+    where coalesce(u.raw_user_meta_data->>'account_type', '') = 'partner'
+      and (
+        p.id is null
+        or p.partner_org_id is null
+        or p.user_type is distinct from 'partner'
+      )
+  loop
+    v_org_name := trim(coalesce(r.raw_user_meta_data->>'organization_name', ''));
+    if v_org_name = '' then
+      v_org_name := coalesce(r.raw_user_meta_data->>'full_name', 'Partner organization');
+    end if;
+
+    insert into public.profiles (id, full_name, school_name, user_type)
+    values (
+      r.id,
+      coalesce(r.raw_user_meta_data->>'full_name', ''),
+      null,
+      'partner'
+    )
+    on conflict (id) do update set
+      user_type = 'partner',
+      updated_at = now();
+
+    insert into public.partner_organizations (
+      name,
+      description,
+      website,
+      status,
+      owner_user_id
+    ) values (
+      v_org_name,
+      nullif(trim(coalesce(r.raw_user_meta_data->>'organization_description', '')), ''),
+      nullif(trim(coalesce(r.raw_user_meta_data->>'organization_website', '')), ''),
+      'pending',
+      r.id
+    )
+    on conflict (owner_user_id) do nothing
+    returning id into v_org_id;
+
+    if v_org_id is null then
+      select id into v_org_id
+      from public.partner_organizations
+      where owner_user_id = r.id;
+    end if;
+
+    update public.profiles
+    set user_type = 'partner',
+        partner_org_id = v_org_id,
+        updated_at = now()
+    where id = r.id;
+  end loop;
+end $$;
+
+-- Verify backfill
+select
+  u.email,
+  p.user_type,
+  p.partner_org_id,
+  po.name,
+  po.status
+from auth.users u
+join public.profiles p on p.id = u.id
+left join public.partner_organizations po on po.id = p.partner_org_id
+where coalesce(u.raw_user_meta_data->>'account_type', '') = 'partner'
+order by u.created_at desc;
+
+-- Admin emails (add more below if needed)
+-- Ensure ADMIN_EMAILS from .env are in challenge_admins (required for admin_list_partner_orgs).
+-- Add one row per admin email; safe to re-run.
+
+insert into public.challenge_admins (email)
+values ('markustang08@gmail.com')
+on conflict do nothing;
+
+-- Add additional admin emails below:
+-- insert into public.challenge_admins (email) values ('you@example.com') on conflict do nothing;
+
+select * from public.challenge_admins order by email;
+
+-- Optional: confirm setup
+select to_regclass('public.partner_organizations') as partner_table;
+select proname from pg_proc where proname in ('admin_list_partner_orgs','admin_upsert_challenge');
+
+notify pgrst, 'reload schema';

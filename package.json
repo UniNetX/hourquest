@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:push": "node scripts/supabase-db-push.mjs"
+    "db:push": "node scripts/supabase-db-push.mjs",
+    "db:apply-all": "node scripts/apply-all-sql.mjs",
+    "verify:supabase": "node scripts/verify-supabase.mjs",
+    "apply-partner-setup": "node scripts/apply-partner-setup.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -34,6 +37,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "pg": "^8.22.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

@@ -6,17 +6,28 @@ Next.js web app for [challenges.terraserve.org](https://challenges.terraserve.or
 
 1. Copy `.env.example` to `.env.local` and fill in Supabase + admin email values.
 2. Apply the database schema — either:
-   - **CLI:** add your database connection string to `.env.local`, then:
+   - **CLI (recommended):** add your database connection string to `.env.local`, then:
      ```bash
      # Dashboard → Settings → Database → Session pooler (port 5432)
      # Add to .env.local: SUPABASE_DB_URL=postgresql://postgres.zfexfatuhcqmwozouwtk:...
      npm run db:push
      ```
      No `supabase login` or `supabase link` required — only the database password.
-   - **SQL Editor:** run [`supabase/RUN_IN_SQL_EDITOR.sql`](supabase/RUN_IN_SQL_EDITOR.sql) for a fresh project, or run individual files under `supabase/migrations/` for updates.
-3. Verify: `node scripts/verify-supabase.mjs`
-4. Add your admin email to `challenge_admins` (included in RUN_IN_SQL_EDITOR.sql as `markustang08@gmail.com`).
-5. Configure Supabase Auth email templates for password reset (Auth → Email).
+   - **SQL Editor (fresh project):** run [`supabase/RUN_IN_SQL_EDITOR.sql`](supabase/RUN_IN_SQL_EDITOR.sql), then all migrations in [`supabase/migrations/`](supabase/migrations/) in filename order. `RUN_IN_SQL_EDITOR.sql` alone does not create partner tables or homepage testimonials.
+   - **SQL Editor (existing DB, partner only):** run [`supabase/scripts/APPLY_PARTNER_SETUP_ALL.sql`](supabase/scripts/APPLY_PARTNER_SETUP_ALL.sql), then apply any newer migrations (e.g. [`20260702120000_testimonial_avatars_and_storage.sql`](supabase/migrations/20260702120000_testimonial_avatars_and_storage.sql)).
+3. Verify: `npm run verify:supabase` (loads `.env.local` automatically)
+4. **Sync admin emails:** every address in `ADMIN_EMAILS` must exist in `challenge_admins` (see [`supabase/scripts/sync-challenge-admins.sql`](supabase/scripts/sync-challenge-admins.sql)). Without this, `/admin` loads but RPC actions fail with Forbidden.
+5. If partners signed up before the partner migration, run [`supabase/scripts/backfill-broken-partner-profiles.sql`](supabase/scripts/backfill-broken-partner-profiles.sql).
+6. Full SQL audit (optional): run [`supabase/scripts/diagnose-deployment.sql`](supabase/scripts/diagnose-deployment.sql) in the Supabase SQL Editor.
+7. Configure Supabase Auth email templates for password reset (Auth → Email).
+
+### Deployment checklist (existing production DB)
+
+1. [`APPLY_PARTNER_SETUP_ALL.sql`](supabase/scripts/APPLY_PARTNER_SETUP_ALL.sql) — if partner setup not yet applied
+2. New migrations via `npm run db:push` or paste in SQL Editor (includes testimonial photos + avatars storage)
+3. [`sync-challenge-admins.sql`](supabase/scripts/sync-challenge-admins.sql) — add all `ADMIN_EMAILS`
+4. `npm run verify:supabase`
+5. [`diagnose-deployment.sql`](supabase/scripts/diagnose-deployment.sql) — full read-only audit
 
 ### Supabase CLI troubleshooting
 

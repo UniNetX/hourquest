@@ -99,6 +99,7 @@ export interface HomepageTestimonial {
   display_name: string;
   display_school: string;
   sort_order: number;
+  avatar_url: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -1,6 +1,10 @@
 -- PATCH ONLY — do not use this for a fresh database.
 --
 -- Use RUN_IN_SQL_EDITOR.sql for new projects (full schema + seed data).
+-- For partner-era projects, prefer npm run db:push or the migrations in
+-- supabase/migrations/ — this file does not include partner, homepage
+-- testimonial, or storage bucket setup.
+--
 -- Run this file ONLY if you already ran the main schema but admin actions
 -- still fail, or `node scripts/verify-supabase.mjs` reports
 -- admin_upsert_challenge as MISSING.

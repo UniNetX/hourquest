@@ -43,23 +43,58 @@ export function SignInForm({ next }: { next?: string }) {
       }
 
       const userId = signInData.user?.id;
-      if (userId) {
+      const user = signInData.user;
+      if (userId && user) {
+        const accountType =
+          typeof user.user_metadata?.account_type === "string"
+            ? user.user_metadata.account_type
+            : null;
+
         const { data: profile } = await supabase
           .from("profiles")
           .select("user_type, partner_org_id")
           .eq("id", userId)
           .single();
 
+        const isPartnerAccount =
+          accountType === "partner" || profile?.user_type === "partner";
+
+        if (isPartnerAccount && !profile?.partner_org_id) {
+          setError(
+            "Partner account setup is incomplete. Please contact support so your organization can be linked.",
+          );
+          return;
+        }
+
         if (profile?.user_type === "partner" && profile.partner_org_id) {
           const { data: org } = await supabase
             .from("partner_organizations")
-            .select("status")
+            .select("status, name")
             .eq("id", profile.partner_org_id)
             .single();
 
           if (org) {
+            if (org.status === "pending") {
+              const orgName =
+                typeof user.user_metadata?.organization_name === "string"
+                  ? user.user_metadata.organization_name
+                  : org.name;
+              await fetch("/api/notify-admin-partner-signup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ orgName }),
+              }).catch(() => {});
+            }
+
             router.push(next?.startsWith("/partner") ? next : getPartnerHomePath(org));
             router.refresh();
+            return;
+          }
+
+          if (isPartnerAccount) {
+            setError(
+              "Partner organization not found. Please contact support.",
+            );
             return;
           }
         }

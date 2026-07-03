@@ -32,7 +32,7 @@ const features = [
     tag: "Platform",
     title: "Also on the App",
     description:
-      "Hours from the HourQuest app count toward the same certificates.",
+      "Hours from the TerraServe app count toward the same certificates.",
     Icon: IconDeviceMobile,
   },
 ];

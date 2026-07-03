@@ -20,7 +20,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    const { id, comment, rating, displayName, displaySchool, sortOrder } = body;
+    const { id, comment, rating, displayName, displaySchool, sortOrder, avatarUrl } =
+      body;
     if (!comment?.trim() || !displayName?.trim()) {
       return NextResponse.json(
         { error: "Quote and display name are required" },
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
         display_name: String(displayName).trim(),
         display_school: String(displaySchool ?? "").trim(),
         sort_order: Number(sortOrder) || 0,
+        avatar_url: avatarUrl ?? "",
       },
     });
 

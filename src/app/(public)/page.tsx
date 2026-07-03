@@ -7,7 +7,6 @@ import { HomeHero } from "@/components/home/HomeHero";
 import { HowItWorks } from "@/components/home/HowItWorks";
 import { TerraServeAppSection } from "@/components/home/TerraServeAppSection";
 import { ImpactStats } from "@/components/home/ImpactStats";
-import { LeaderboardPreview } from "@/components/home/LeaderboardPreview";
 import { TestimonialsCarousel } from "@/components/home/TestimonialsCarousel";
 import { SectionHeader } from "@/components/marketing/SectionHeader";
 import { dashboardSubmitHref } from "@/lib/dashboard-nav";
@@ -27,7 +26,6 @@ async function getHomeData() {
   const empty = {
     featured: [] as Challenge[],
     stats: { hours: 0, students: 0, challenges: 0 },
-    leaderboard: [],
     testimonials: [],
     user: null,
   };
@@ -36,7 +34,7 @@ async function getHomeData() {
     return empty;
   }
 
-  const [challengesRes, statsRes, leaderboardRes, userRes] = await Promise.all([
+  const [challengesRes, statsRes, userRes] = await Promise.all([
     supabase
       .from("challenges")
       .select("*")
@@ -50,7 +48,6 @@ async function getHomeData() {
         .select("id", { count: "exact", head: true })
         .eq("active", true),
     ]),
-    supabase.from("individual_leaderboard_all_time").select("*").limit(3),
     supabase.auth.getUser(),
   ]);
 
@@ -89,14 +86,13 @@ async function getHomeData() {
       students: statsRes[1].count ?? 0,
       challenges: statsRes[2].count ?? 0,
     },
-    leaderboard: leaderboardRes.data ?? [],
     testimonials: testimonialsRes.data ?? [],
     user: userRes.data.user,
   };
 }
 
 export default async function HomePage() {
-  const { featured, stats, leaderboard, testimonials, user } = await getHomeData();
+  const { featured, stats, testimonials, user } = await getHomeData();
   const startHref = (id: string) =>
     user
       ? dashboardSubmitHref(id)
@@ -107,8 +103,18 @@ export default async function HomePage() {
       <HomeHero />
       <ImpactStats stats={stats} />
       <HowItWorks />
-      <TerraServeAppSection />
+      <section className="section-alt section-y">
+        <div className="section-container">
+          <SectionHeader
+            eyebrow="Testimonials"
+            title="What Students Are Saying"
+            subtitle="Hear from students earning verified environmental and medical service hours with HourQuest."
+          />
+          <TestimonialsCarousel testimonials={testimonials} />
+        </div>
+      </section>
       <FeaturedChallengesSection challenges={featured} startHref={startHref} />
+      <Differentiators />
       <DualCtaPanel
         title="How Can We Help You?"
         subtitle="Whether you want to earn hours or bring HourQuest to your school, we have a path for you."
@@ -138,27 +144,7 @@ export default async function HomePage() {
           ctaHref: "/partnership",
         }}
       />
-      <Differentiators />
-      <section className="section-y bg-page">
-        <div className="section-container">
-          <SectionHeader
-            eyebrow="Leaderboard"
-            title="Top Students"
-            subtitle="See who's leading the way in verified environmental and medical service."
-          />
-          <LeaderboardPreview initialData={leaderboard} />
-        </div>
-      </section>
-      <section className="section-alt section-y">
-        <div className="section-container">
-          <SectionHeader
-            eyebrow="Testimonials"
-            title="What Students Are Saying"
-            subtitle="Hear from students earning verified environmental and medical service hours with HourQuest."
-          />
-          <TestimonialsCarousel testimonials={testimonials} />
-        </div>
-      </section>
+      <TerraServeAppSection />
       <CtaBand
         title="Ready to Get Started?"
         subtitle="Join students earning verified volunteer hours through real environmental and health service."

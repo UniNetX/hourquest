@@ -23,9 +23,9 @@ export function TerraServeAppSection() {
             TerraServe for iOS
           </p>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-muted">
-            Hours logged through TerraServe count toward the same verified certificates
+            Hours logged through the TerraServe app count toward the same verified certificates
             you earn here. Use HourQuest for photo-based environmental and medical
-            challenges; use TerraServe when you want hyperlocal org listings and
+            challenges on the web; use the TerraServe app when you want hyperlocal org listings and
             event check-ins on your phone.
           </p>
           <div className="mt-8">

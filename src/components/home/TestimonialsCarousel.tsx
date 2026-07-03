@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { IconStarFilled } from "@tabler/icons-react";
 import { getDisplayInitial } from "@/lib/profile-display";
 import { cn } from "@/lib/utils";
@@ -11,6 +12,7 @@ export type Testimonial = {
   comment: string;
   name: string;
   school: string;
+  avatarUrl: string | null;
 };
 
 function toTestimonials(items: HomepageTestimonial[]): Testimonial[] {
@@ -20,7 +22,29 @@ function toTestimonials(items: HomepageTestimonial[]): Testimonial[] {
     comment: item.comment,
     name: item.display_name,
     school: item.display_school || "Verified student",
+    avatarUrl: item.avatar_url,
   }));
+}
+
+function TestimonialAvatar({ item }: { item: Testimonial }) {
+  if (item.avatarUrl) {
+    return (
+      <Image
+        src={item.avatarUrl}
+        alt=""
+        width={40}
+        height={40}
+        className="h-10 w-10 shrink-0 rounded-full object-cover"
+        unoptimized
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-light text-sm font-semibold text-primary-dark">
+      {getDisplayInitial(item.name)}
+    </div>
+  );
 }
 
 function TestimonialCard({ item }: { item: Testimonial }) {
@@ -35,9 +59,7 @@ function TestimonialCard({ item }: { item: Testimonial }) {
         &ldquo;{item.comment}&rdquo;
       </p>
       <div className="mt-4 flex items-center gap-3 border-t border-border pt-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-light text-sm font-semibold text-primary-dark">
-          {getDisplayInitial(item.name)}
-        </div>
+        <TestimonialAvatar item={item} />
         <div>
           <p className="text-sm font-semibold">{item.name}</p>
           <p className="text-xs text-text-caption">{item.school}</p>

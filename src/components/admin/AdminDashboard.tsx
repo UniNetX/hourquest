@@ -48,6 +48,7 @@ import type {
   StudentStory,
 } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
+import { partnerSetupErrorMessage } from "@/lib/partner-admin-errors";
 
 type ProfileRow = {
   id: string;
@@ -67,7 +68,92 @@ type HomepageTestimonialDraft = {
   display_name: string;
   display_school: string;
   sort_order: number;
+  avatar_url: string | null;
 };
+
+const HOMEPAGE_TESTIMONIALS_BUCKET = "homepage-testimonials";
+
+function avatarPathFromUrl(url: string | null): string | null {
+  if (!url) return null;
+  const marker = `/storage/v1/object/public/${HOMEPAGE_TESTIMONIALS_BUCKET}/`;
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  return url.slice(idx + marker.length);
+}
+
+async function uploadHomepageTestimonialPhoto(
+  supabase: ReturnType<typeof createClient>,
+  testimonialId: string,
+  file: File,
+): Promise<string> {
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const path = `${testimonialId}/avatar.${ext}`;
+  const { error } = await supabase.storage
+    .from(HOMEPAGE_TESTIMONIALS_BUCKET)
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (error) throw new Error(error.message);
+  const { data } = supabase.storage
+    .from(HOMEPAGE_TESTIMONIALS_BUCKET)
+    .getPublicUrl(path);
+  return data.publicUrl;
+}
+
+function HomepageTestimonialPhotoField({
+  avatarUrl,
+  photoPreview,
+  onFileChange,
+  onClear,
+}: {
+  avatarUrl: string | null;
+  photoPreview: string | null;
+  onFileChange: (file: File | null) => void;
+  onClear: () => void;
+}) {
+  const preview = photoPreview ?? avatarUrl;
+
+  return (
+    <div>
+      <Label>Photo</Label>
+      <div className="mt-1 flex flex-wrap items-center gap-3">
+        {preview ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={preview}
+            alt=""
+            className="h-14 w-14 rounded-full object-cover"
+          />
+        ) : (
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-light text-sm font-semibold text-primary-dark">
+            ?
+          </div>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <label className="cursor-pointer">
+            <span className="inline-flex h-9 items-center rounded-xl border border-border bg-page px-3 text-[12px] font-medium">
+              {preview ? "Change photo" : "Upload photo"}
+            </span>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
+            />
+          </label>
+          {(preview || photoPreview) && (
+            <Button
+              type="button"
+              variant="secondary"
+              className="px-3 py-1 text-[12px]"
+              onClick={onClear}
+            >
+              Remove photo
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function homepageTestimonialDefaults(
   item?: HomepageTestimonial,
@@ -78,6 +164,7 @@ function homepageTestimonialDefaults(
     display_name: item?.display_name ?? "",
     display_school: item?.display_school ?? "",
     sort_order: item?.sort_order ?? 0,
+    avatar_url: item?.avatar_url ?? null,
   };
 }
 
@@ -153,6 +240,10 @@ function SortableChallengeRow({
   );
 }
 
+function partnerRpcErrorMessage(error: { message?: string } | null): string | null {
+  return partnerSetupErrorMessage(error);
+}
+
 export function AdminDashboard({
   initialStats,
   initialSubmissions,
@@ -161,6 +252,8 @@ export function AdminDashboard({
   initialHomepageTestimonials,
   initialUsers,
   initialPartners,
+  initialPartnersError,
+  supabaseProjectRef,
 }: {
   initialStats: {
     users: number;
@@ -174,6 +267,8 @@ export function AdminDashboard({
   initialHomepageTestimonials: HomepageTestimonial[];
   initialUsers: ProfileRow[];
   initialPartners: PartnerOrganization[];
+  initialPartnersError?: string | null;
+  supabaseProjectRef: string;
 }) {
   const [tab, setTab] = useState<
     "submissions" | "challenges" | "stories" | "users" | "partners"
@@ -192,6 +287,10 @@ export function AdminDashboard({
   const [homepageDraft, setHomepageDraft] = useState<HomepageTestimonialDraft | null>(
     null,
   );
+  const [homepagePhotoFile, setHomepagePhotoFile] = useState<File | null>(null);
+  const [homepagePhotoPreview, setHomepagePhotoPreview] = useState<string | null>(
+    null,
+  );
   const [users, setUsers] = useState(initialUsers);
   const [trackFilter, setTrackFilter] = useState<ChallengeTrack>("environmental");
   const [categoryFilter, setCategoryFilter] = useState<ChallengeCategory | "all">("all");
@@ -202,6 +301,11 @@ export function AdminDashboard({
   const [rejectReason, setRejectReason] = useState("");
   const [userSearch, setUserSearch] = useState("");
   const [partners, setPartners] = useState(initialPartners);
+  const [partnersError, setPartnersError] = useState(
+    partnerRpcErrorMessage(
+      initialPartnersError ? { message: initialPartnersError } : null,
+    ),
+  );
   const [partnerRejectId, setPartnerRejectId] = useState<string | null>(null);
   const [partnerRejectReason, setPartnerRejectReason] = useState("");
 
@@ -229,7 +333,13 @@ export function AdminDashboard({
         .select("*")
         .order("sort_order", { ascending: true }),
       supabase.from("profiles").select("id, full_name, school_name, total_verified_hours, created_at").order("created_at", { ascending: false }).limit(100),
-      supabase.rpc("admin_list_partner_orgs", { p_status: null }),
+      fetch("/api/admin/partners").then(async (res) => {
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          return { data: [], error: { message: json.error ?? "Failed to load partners" } };
+        }
+        return { data: json.data ?? [], error: null };
+      }),
     ]);
     setSubmissions(subs.data ?? []);
     setChallenges(chals.data ?? []);
@@ -237,6 +347,7 @@ export function AdminDashboard({
     setHomepageTestimonials((homepage.data as HomepageTestimonial[]) ?? []);
     setUsers(profs.data ?? []);
     setPartners((partnerRows.data as PartnerOrganization[]) ?? []);
+    setPartnersError(partnerRpcErrorMessage(partnerRows.error ?? null));
   }, []);
 
   async function reviewPartner(orgId: string, action: "approve" | "reject", reason?: string) {
@@ -324,34 +435,102 @@ export function AdminDashboard({
   function startEditHomepage(item?: HomepageTestimonial) {
     setEditingHomepageId(item?.id ?? "new");
     setHomepageDraft(homepageTestimonialDefaults(item));
+    setHomepagePhotoFile(null);
+    setHomepagePhotoPreview(null);
+  }
+
+  function handleHomepagePhotoFile(file: File | null) {
+    setHomepagePhotoFile(file);
+    if (homepagePhotoPreview) {
+      URL.revokeObjectURL(homepagePhotoPreview);
+    }
+    setHomepagePhotoPreview(file ? URL.createObjectURL(file) : null);
+  }
+
+  function clearHomepagePhoto() {
+    handleHomepagePhotoFile(null);
+    if (homepageDraft) {
+      setHomepageDraft({ ...homepageDraft, avatar_url: null });
+    }
   }
 
   async function saveHomepageTestimonial() {
     if (!homepageDraft) return;
-    const res = await fetch("/api/admin/homepage-testimonials", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id: editingHomepageId === "new" ? undefined : editingHomepageId,
-        comment: homepageDraft.comment,
-        rating: homepageDraft.rating,
-        displayName: homepageDraft.display_name,
-        displaySchool: homepageDraft.display_school,
-        sortOrder: homepageDraft.sort_order,
-      }),
-    });
-    if (!res.ok) {
-      const json = await res.json().catch(() => ({}));
-      alert(json.error ?? "Failed to save testimonial");
-      return;
+    const supabase = createClient();
+    let testimonialId =
+      editingHomepageId === "new" ? null : editingHomepageId;
+    let avatarUrl = homepageDraft.avatar_url;
+
+    try {
+      if (homepagePhotoFile) {
+        if (!testimonialId) {
+          const createRes = await fetch("/api/admin/homepage-testimonials", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              comment: homepageDraft.comment,
+              rating: homepageDraft.rating,
+              displayName: homepageDraft.display_name,
+              displaySchool: homepageDraft.display_school,
+              sortOrder: homepageDraft.sort_order,
+            }),
+          });
+          if (!createRes.ok) {
+            const json = await createRes.json().catch(() => ({}));
+            alert(json.error ?? "Failed to save testimonial");
+            return;
+          }
+          const created = await createRes.json();
+          testimonialId = created.data.id;
+        }
+        avatarUrl = await uploadHomepageTestimonialPhoto(
+          supabase,
+          testimonialId!,
+          homepagePhotoFile,
+        );
+      }
+
+      const res = await fetch("/api/admin/homepage-testimonials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: testimonialId ?? undefined,
+          comment: homepageDraft.comment,
+          rating: homepageDraft.rating,
+          displayName: homepageDraft.display_name,
+          displaySchool: homepageDraft.display_school,
+          sortOrder: homepageDraft.sort_order,
+          avatarUrl: avatarUrl ?? "",
+        }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        alert(json.error ?? "Failed to save testimonial");
+        return;
+      }
+      setEditingHomepageId(null);
+      setHomepageDraft(null);
+      setHomepagePhotoFile(null);
+      if (homepagePhotoPreview) {
+        URL.revokeObjectURL(homepagePhotoPreview);
+      }
+      setHomepagePhotoPreview(null);
+      loadData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to upload photo");
     }
-    setEditingHomepageId(null);
-    setHomepageDraft(null);
-    loadData();
   }
 
-  async function deleteHomepageTestimonial(id: string) {
+  async function deleteHomepageTestimonial(
+    id: string,
+    avatarUrl?: string | null,
+  ) {
     if (!confirm("Remove this testimonial from the homepage?")) return;
+    const path = avatarPathFromUrl(avatarUrl ?? null);
+    if (path) {
+      const supabase = createClient();
+      await supabase.storage.from(HOMEPAGE_TESTIMONIALS_BUCKET).remove([path]);
+    }
     const res = await fetch("/api/admin/homepage-testimonials", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -634,6 +813,12 @@ export function AdminDashboard({
                       />
                     </div>
                   </div>
+                  <HomepageTestimonialPhotoField
+                    avatarUrl={homepageDraft.avatar_url}
+                    photoPreview={homepagePhotoPreview}
+                    onFileChange={handleHomepagePhotoFile}
+                    onClear={clearHomepagePhoto}
+                  />
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
                       <Label>Rating (1–5)</Label>
@@ -676,6 +861,11 @@ export function AdminDashboard({
                       onClick={() => {
                         setEditingHomepageId(null);
                         setHomepageDraft(null);
+                        setHomepagePhotoFile(null);
+                        if (homepagePhotoPreview) {
+                          URL.revokeObjectURL(homepagePhotoPreview);
+                        }
+                        setHomepagePhotoPreview(null);
                       }}
                     >
                       Cancel
@@ -733,6 +923,16 @@ export function AdminDashboard({
                                 />
                               </div>
                             </div>
+                            <HomepageTestimonialPhotoField
+                              avatarUrl={draft.avatar_url}
+                              photoPreview={
+                                editingHomepageId === item.id
+                                  ? homepagePhotoPreview
+                                  : null
+                              }
+                              onFileChange={handleHomepagePhotoFile}
+                              onClear={clearHomepagePhoto}
+                            />
                             <div className="grid gap-3 sm:grid-cols-2">
                               <div>
                                 <Label>Rating (1–5)</Label>
@@ -778,6 +978,11 @@ export function AdminDashboard({
                                 onClick={() => {
                                   setEditingHomepageId(null);
                                   setHomepageDraft(null);
+                                  setHomepagePhotoFile(null);
+                                  if (homepagePhotoPreview) {
+                                    URL.revokeObjectURL(homepagePhotoPreview);
+                                  }
+                                  setHomepagePhotoPreview(null);
                                 }}
                               >
                                 Cancel
@@ -787,12 +992,22 @@ export function AdminDashboard({
                         ) : (
                           <>
                             <div className="flex flex-wrap items-start justify-between gap-2">
-                              <div>
-                                <p className="text-[13px] font-medium">{item.display_name}</p>
-                                <p className="text-[11px] text-text-caption">
-                                  {item.display_school || "No school"} · {item.rating} stars ·
-                                  order {item.sort_order}
-                                </p>
+                              <div className="flex items-start gap-3">
+                                {item.avatar_url ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={item.avatar_url}
+                                    alt=""
+                                    className="h-10 w-10 shrink-0 rounded-full object-cover"
+                                  />
+                                ) : null}
+                                <div>
+                                  <p className="text-[13px] font-medium">{item.display_name}</p>
+                                  <p className="text-[11px] text-text-caption">
+                                    {item.display_school || "No school"} · {item.rating} stars ·
+                                    order {item.sort_order}
+                                  </p>
+                                </div>
                               </div>
                               <div className="flex gap-2">
                                 <Button
@@ -805,7 +1020,9 @@ export function AdminDashboard({
                                 <Button
                                   variant="danger"
                                   className="px-3 py-1 text-[12px]"
-                                  onClick={() => deleteHomepageTestimonial(item.id)}
+                                  onClick={() =>
+                                    deleteHomepageTestimonial(item.id, item.avatar_url)
+                                  }
                                 >
                                   Delete
                                 </Button>
@@ -864,7 +1081,21 @@ export function AdminDashboard({
         {tab === "partners" && (
           <div className="space-y-3">
             <h2 className="text-lg font-medium">Partner applications</h2>
-            {partners.filter((p) => p.status === "pending").length === 0 ? (
+            {partnersError && (
+              <Card className="border-amber-200 bg-amber-50 text-sm text-amber-900">
+                <p className="font-medium">Database project: {supabaseProjectRef}</p>
+                <p className="mt-2 whitespace-pre-line">{partnersError}</p>
+                <a
+                  href={`https://supabase.com/dashboard/project/${supabaseProjectRef}/sql/new`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-block text-primary underline"
+                >
+                  Open SQL Editor for this project
+                </a>
+              </Card>
+            )}
+            {!partnersError && partners.filter((p) => p.status === "pending").length === 0 ? (
               <Card className="text-sm text-text-muted">No pending partner applications.</Card>
             ) : (
               partners

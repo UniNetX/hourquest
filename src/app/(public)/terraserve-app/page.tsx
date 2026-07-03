@@ -6,7 +6,7 @@ import { createMetadata } from "@/lib/seo";
 export const metadata = createMetadata({
   title: "TerraServe iOS App — HourQuest",
   description:
-    "Learn about the TerraServe iOS app for local volunteer events and GPS check-in alongside HourQuest challenges.",
+    "Learn about the TerraServe iOS app for local volunteer events and GPS check-in alongside HourQuest web challenges.",
   path: "/terraserve-app",
 });
 
@@ -24,7 +24,7 @@ const highlights = [
   {
     title: "Shared verified hours",
     description:
-      "Service tracked in TerraServe rolls into the same milestone certificates you earn on HourQuest.",
+      "Service tracked in the TerraServe app rolls into the same milestone certificates you earn on HourQuest.",
   },
   {
     title: "Works with HourQuest",
@@ -51,7 +51,7 @@ export default function TerraServeAppPage() {
               TerraServe for iOS
             </h1>
             <p className="mt-4 text-base leading-relaxed text-text-muted">
-              TerraServe is the mobile app for HourQuest. It connects students
+              TerraServe is the iOS app that complements HourQuest. It connects students
               with hyperlocal volunteer organizations, event listings, and GPS
               check-in — while HourQuest focuses on verified environmental and
               medical challenges with photo proof on the web.
@@ -77,8 +77,8 @@ export default function TerraServeAppPage() {
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-text-muted">
               Whether you complete a beach cleanup challenge on HourQuest or check
-              in at a food bank through TerraServe, your verified hours build toward
-              the same profile and certificate milestones. TerraServe is built for
+              in at a food bank through the TerraServe app, your verified hours build toward
+              the same profile and certificate milestones. The TerraServe app is built for
               discovery and attendance on iOS; HourQuest is built for structured
               challenges and proof review in the browser.
             </p>

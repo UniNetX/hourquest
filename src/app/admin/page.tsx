@@ -1,6 +1,11 @@
 import { redirect } from "next/navigation";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { isAdminEmail } from "@/lib/admin";
+import {
+  getSupabaseProjectRef,
+  loadPartnerOrganizationsForAdmin,
+  partnerSetupErrorMessage,
+} from "@/lib/partner-admin";
 import { createClient } from "@/lib/supabase/server";
 import { createMetadata } from "@/lib/seo";
 
@@ -33,7 +38,7 @@ export default async function AdminPage() {
     storiesData,
     homepageTestimonialsData,
     usersData,
-    partnersData,
+    partnersResult,
   ] = await Promise.all([
     supabase.from("profiles").select("id", { count: "exact", head: true }),
     supabase.from("profiles").select("total_verified_hours"),
@@ -64,7 +69,7 @@ export default async function AdminPage() {
       .select("id, full_name, school_name, total_verified_hours, created_at")
       .order("created_at", { ascending: false })
       .limit(100),
-    supabase.rpc("admin_list_partner_orgs", { p_status: null }),
+    loadPartnerOrganizationsForAdmin(),
   ]);
 
   const hours =
@@ -72,6 +77,8 @@ export default async function AdminPage() {
       (sum, p) => sum + Number(p.total_verified_hours || 0),
       0,
     ) ?? 0;
+
+  const projectRef = getSupabaseProjectRef();
 
   return (
     <AdminDashboard
@@ -86,7 +93,9 @@ export default async function AdminPage() {
       initialStories={storiesData.data ?? []}
       initialHomepageTestimonials={homepageTestimonialsData.data ?? []}
       initialUsers={usersData.data ?? []}
-      initialPartners={partnersData.data ?? []}
+      initialPartners={partnersResult.data}
+      initialPartnersError={partnerSetupErrorMessage(partnersResult.error, projectRef)}
+      supabaseProjectRef={projectRef}
     />
   );
 }
