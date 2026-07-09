@@ -22,11 +22,11 @@ const coFounders: TeamMember[] = [
 ];
 
 const vicePresidents: TeamMember[] = [
-  { name: "Abhi Varre", role: "Vice President", initials: "AV" },
-  { name: "Somansh H", role: "Vice President", initials: "SH" },
+  { name: "Somanch Hippalgaonkar", role: "Vice President", initials: "SH" },
 ];
 
 const officers: TeamMember[] = [
+  { name: "Abhi Varre", role: "Officer", initials: "AV" },
   { name: "Janav Mistry", role: "Officer", initials: "JM" },
   { name: "Sanjeev Sundar", role: "Officer", initials: "SS" },
   { name: "Rutvik Garige", role: "Officer", initials: "RG" },
