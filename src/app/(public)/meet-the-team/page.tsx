@@ -22,14 +22,14 @@ const coFounders: TeamMember[] = [
 ];
 
 const vicePresidents: TeamMember[] = [
-  { name: "Atharva Chobe", role: "Vice President", initials: "AC" },
-  { name: "Janav Mistry", role: "Vice President", initials: "JM" },
+  { name: "Abhi Varre", role: "Vice President", initials: "AV" },
+  { name: "Somansh H", role: "Vice President", initials: "SH" },
 ];
 
 const officers: TeamMember[] = [
+  { name: "Janav Mistry", role: "Officer", initials: "JM" },
   { name: "Sanjeev Sundar", role: "Officer", initials: "SS" },
   { name: "Rutvik Garige", role: "Officer", initials: "RG" },
-  { name: "Aahil Raffe", role: "Officer", initials: "AR" },
 ];
 
 function TeamMemberCard({ member }: { member: TeamMember }) {
