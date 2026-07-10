@@ -9,7 +9,13 @@ export async function POST(request: Request) {
       p_payload: payload,
     });
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      const msg = error.message ?? "Failed to save challenge.";
+      const friendly = msg.includes("challenges_partner_org_track_check")
+        ? "Could not save challenge: your partner organization is not linked correctly. Sign out and back in, or contact support."
+        : msg.includes("No partner organization")
+          ? "Your account is not linked to a partner organization. Contact support."
+          : msg;
+      return NextResponse.json({ error: friendly }, { status: 400 });
     }
     return NextResponse.json({ data });
   } catch {

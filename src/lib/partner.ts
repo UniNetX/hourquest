@@ -26,13 +26,11 @@ export async function getPartnerSession(): Promise<PartnerSession | null> {
     .eq("id", user.id)
     .single();
 
-  if (!profile?.partner_org_id) return null;
-
   const { data: org } = await supabase
     .from("partner_organizations")
     .select("*")
-    .eq("id", profile.partner_org_id)
-    .single();
+    .eq("owner_user_id", user.id)
+    .maybeSingle();
 
   if (!org) return null;
 
