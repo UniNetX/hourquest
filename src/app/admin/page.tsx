@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
-import { isAdminEmail } from "@/lib/admin";
+import { isChallengesAdmin } from "@/lib/admin";
 import {
   getSupabaseProjectRef,
   loadPartnerOrganizationsForAdmin,
@@ -24,7 +24,7 @@ export default async function AdminPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user || !isAdminEmail(user.email)) {
+  if (!user || !(await isChallengesAdmin(supabase))) {
     redirect("/");
   }
 

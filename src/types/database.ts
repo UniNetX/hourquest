@@ -264,6 +264,10 @@ export type Database = {
         Args: { p_status?: string | null };
         Returns: PartnerOrganization[];
       };
+      is_challenges_admin: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
       partner_upsert_challenge: {
         Args: { p_payload: Record<string, unknown> };
         Returns: Challenge;

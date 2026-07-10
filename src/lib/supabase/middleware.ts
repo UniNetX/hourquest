@@ -59,13 +59,8 @@ export async function updateSession(request: NextRequest) {
     }
 
     if (user && pathname.startsWith("/admin")) {
-      const adminEmails = (process.env.ADMIN_EMAILS ?? "")
-        .split(",")
-        .map((e) => e.trim().toLowerCase())
-        .filter(Boolean);
-
-      const userEmail = user.email?.toLowerCase();
-      if (!userEmail || !adminEmails.includes(userEmail)) {
+      const { data: isAdmin, error } = await supabase.rpc("is_challenges_admin");
+      if (error || !isAdmin) {
         const url = request.nextUrl.clone();
         url.pathname = "/";
         return NextResponse.redirect(url);
