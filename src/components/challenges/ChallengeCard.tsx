@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/Button";
 import { DifficultyBadge } from "@/components/ui/DifficultyBadge";
+import { ProofInstructions } from "@/components/challenges/ProofInstructions";
 import type { Challenge } from "@/types/database";
 
 export function ChallengeCard({
@@ -38,10 +39,7 @@ export function ChallengeCard({
         <p className="pillar-card__body line-clamp-3">{challenge.description}</p>
       </div>
       {challenge.proof_instructions && (
-        <p className="mt-2 shrink-0 line-clamp-2 text-xs leading-relaxed text-text-muted">
-          <span className="font-semibold text-text-caption">Proof: </span>
-          {challenge.proof_instructions}
-        </p>
+        <ProofInstructions text={challenge.proof_instructions} compact />
       )}
       <div className="mt-auto flex items-center justify-between border-t border-border pt-4">
         <span className="text-xs font-semibold text-primary-dark">

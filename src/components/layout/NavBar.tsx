@@ -15,13 +15,13 @@ const publicLinks = [
   { href: "/", label: "Home" },
   { href: "/challenges", label: "Challenges" },
   { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/partnership", label: "Partnership" },
   { href: "/terraserve-app", label: "TerraServe iOS" },
 ];
 
 const aboutLinks = [
   { href: "/about", label: "About" },
   { href: "/meet-the-team", label: "Meet the Team" },
-  { href: "/partnership", label: "Partnership" },
   { href: "/faq", label: "FAQ" },
 ];
 
@@ -87,6 +87,7 @@ export function NavBar({
         { href: "/", label: "Home" },
         { href: "/challenges", label: "Challenges" },
         { href: "/leaderboard", label: "Leaderboard" },
+        { href: "/partnership", label: "Partnership" },
       ]
     : null;
 

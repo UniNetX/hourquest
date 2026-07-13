@@ -151,9 +151,16 @@ export function PartnerDashboard({
     const difficulty = editing.difficulty as ChallengeDifficulty;
     const defaults = DIFFICULTY_DEFAULTS[difficulty];
     const payload = {
-      ...editing,
+      id: editing.id,
+      title: editing.title,
+      description: editing.description ?? "",
+      proof_instructions: editing.proof_instructions ?? "",
+      category: editing.category,
+      difficulty: editing.difficulty,
       hours_earned: editing.hours_earned ?? defaults.hours,
       points: editing.points ?? defaults.points,
+      active: editing.active ?? true,
+      sort_order: editing.sort_order,
     };
     const res = await fetch("/api/partner/challenges", {
       method: "POST",
