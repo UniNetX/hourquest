@@ -49,7 +49,7 @@ function TestimonialAvatar({ item }: { item: Testimonial }) {
 
 function TestimonialCard({ item }: { item: Testimonial }) {
   return (
-    <article className="pillar-card mx-3 w-[min(100%,320px)] shrink-0 sm:w-[340px]">
+    <article className="pillar-card min-w-[min(85vw,280px)] shrink-0 snap-center md:min-w-0">
       <div className="mb-3 flex gap-0.5 text-star" aria-label={`${item.rating} stars`}>
         {Array.from({ length: item.rating }).map((_, i) => (
           <IconStarFilled key={i} size={16} />
@@ -86,20 +86,17 @@ export function TestimonialsCarousel({
     );
   }
 
-  const doubled = [...items, ...items];
-
   return (
     <div
-      className={cn("relative overflow-hidden", className)}
+      className={cn(
+        "flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory md:grid md:grid-cols-3 md:overflow-visible md:pb-0",
+        className,
+      )}
       aria-label="Student testimonials"
     >
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-[var(--color-surface)] to-transparent sm:w-20" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-[var(--color-surface)] to-transparent sm:w-20" />
-      <div className="flex w-max motion-safe:animate-marquee py-2">
-        {doubled.map((item, i) => (
-          <TestimonialCard key={`${item.id}-${i}`} item={item} />
-        ))}
-      </div>
+      {items.map((item) => (
+        <TestimonialCard key={item.id} item={item} />
+      ))}
     </div>
   );
 }

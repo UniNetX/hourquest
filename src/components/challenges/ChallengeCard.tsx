@@ -36,7 +36,7 @@ export function ChallengeCard({
       <DifficultyBadge difficulty={challenge.difficulty} compact />
       <h3 className="mt-3 font-display">{challenge.title}</h3>
       <div className="min-h-0 flex-1">
-        <p className="pillar-card__body line-clamp-3">{challenge.description}</p>
+        <p className="pillar-card__body">{challenge.description}</p>
       </div>
       {challenge.proof_instructions && (
         <ProofInstructions text={challenge.proof_instructions} compact />

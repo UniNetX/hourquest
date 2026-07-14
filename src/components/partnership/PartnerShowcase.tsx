@@ -1,4 +1,3 @@
-import { IconExternalLink } from "@tabler/icons-react";
 import { Card } from "@/components/ui/Card";
 import type { PartnerOrganization } from "@/types/database";
 
@@ -27,22 +26,22 @@ function PartnerTile({ partner }: { partner: ShowcasePartner }) {
   const websiteUrl = partner.website ? formatWebsiteUrl(partner.website) : null;
 
   return (
-    <Card interactive className="relative flex h-full flex-col text-center">
-      <div className="mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-primary-light">
+    <article className="pillar-card flex h-full flex-col text-left">
+      <div className="mb-4 flex h-14 items-center">
         {partner.logo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={partner.logo_url}
             alt=""
-            className="h-full w-full object-cover"
+            className="h-14 w-auto max-w-[140px] object-contain"
           />
         ) : (
-          <span className="text-xl font-semibold text-primary-dark">
+          <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-primary-light text-lg font-semibold text-primary-dark">
             {partnerInitials(partner.name)}
           </span>
         )}
       </div>
-      <h3 className="mt-5 font-display text-lg font-semibold text-text">
+      <h3 className="font-display text-lg font-semibold text-text">
         {partner.name}
       </h3>
       {partner.description && (
@@ -55,19 +54,18 @@ function PartnerTile({ partner }: { partner: ShowcasePartner }) {
           href={websiteUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 inline-flex items-center justify-center gap-1.5 text-sm font-medium text-primary hover:text-primary-dark"
+          className="pillar-card__link mt-4"
         >
-          Visit website
-          <IconExternalLink size={14} stroke={2} aria-hidden />
+          Learn more →
         </a>
       )}
-    </Card>
+    </article>
   );
 }
 
 export function PartnerShowcase({ partners }: { partners: ShowcasePartner[] }) {
   return (
-    <section className="relative section-y overflow-hidden bg-page">
+    <section className="relative section-alt section-y overflow-hidden">
       <div
         className="pointer-events-none absolute inset-0 opacity-60"
         aria-hidden

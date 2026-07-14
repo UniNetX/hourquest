@@ -72,6 +72,14 @@ type HomepageTestimonialDraft = {
 };
 
 const HOMEPAGE_TESTIMONIALS_BUCKET = "homepage-testimonials";
+const PARTNER_LOGOS_BUCKET = "partner-logos";
+
+type PartnerOrgDraft = {
+  name: string;
+  description: string;
+  website: string;
+  logo_url: string | null;
+};
 
 function avatarPathFromUrl(url: string | null): string | null {
   if (!url) return null;
@@ -96,6 +104,87 @@ async function uploadHomepageTestimonialPhoto(
     .from(HOMEPAGE_TESTIMONIALS_BUCKET)
     .getPublicUrl(path);
   return data.publicUrl;
+}
+
+async function uploadPartnerLogo(
+  supabase: ReturnType<typeof createClient>,
+  orgId: string,
+  file: File,
+): Promise<string> {
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const path = `${orgId}/logo.${ext}`;
+  const { error } = await supabase.storage
+    .from(PARTNER_LOGOS_BUCKET)
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (error) throw new Error(error.message);
+  const { data } = supabase.storage.from(PARTNER_LOGOS_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+function PartnerLogoField({
+  logoUrl,
+  logoPreview,
+  onFileChange,
+  onClear,
+}: {
+  logoUrl: string | null;
+  logoPreview: string | null;
+  onFileChange: (file: File | null) => void;
+  onClear: () => void;
+}) {
+  const preview = logoPreview ?? logoUrl;
+
+  return (
+    <div>
+      <Label>Logo</Label>
+      <div className="mt-1 flex flex-wrap items-center gap-3">
+        {preview ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={preview}
+            alt=""
+            className="h-14 w-auto max-w-[120px] object-contain"
+          />
+        ) : (
+          <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-primary-light text-sm font-semibold text-primary-dark">
+            ?
+          </div>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <label className="cursor-pointer">
+            <span className="inline-flex h-9 items-center rounded-xl border border-border bg-page px-3 text-[12px] font-medium">
+              {preview ? "Change logo" : "Upload logo"}
+            </span>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/svg+xml"
+              className="sr-only"
+              onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
+            />
+          </label>
+          {(preview || logoPreview) && (
+            <Button
+              type="button"
+              variant="secondary"
+              className="px-3 py-1 text-[12px]"
+              onClick={onClear}
+            >
+              Remove logo
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function partnerOrgDefaults(org?: PartnerOrganization): PartnerOrgDraft {
+  return {
+    name: org?.name ?? "",
+    description: org?.description ?? "",
+    website: org?.website ?? "",
+    logo_url: org?.logo_url ?? null,
+  };
 }
 
 function HomepageTestimonialPhotoField({
@@ -308,6 +397,10 @@ export function AdminDashboard({
   );
   const [partnerRejectId, setPartnerRejectId] = useState<string | null>(null);
   const [partnerRejectReason, setPartnerRejectReason] = useState("");
+  const [editingPartnerId, setEditingPartnerId] = useState<string | null>(null);
+  const [partnerDraft, setPartnerDraft] = useState<PartnerOrgDraft | null>(null);
+  const [partnerLogoFile, setPartnerLogoFile] = useState<File | null>(null);
+  const [partnerLogoPreview, setPartnerLogoPreview] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -368,6 +461,71 @@ export function AdminDashboard({
     setPartnerRejectId(null);
     setPartnerRejectReason("");
     await loadData();
+  }
+
+  function startEditPartner(org: PartnerOrganization) {
+    setEditingPartnerId(org.id);
+    setPartnerDraft(partnerOrgDefaults(org));
+    setPartnerLogoFile(null);
+    setPartnerLogoPreview(null);
+  }
+
+  function cancelEditPartner() {
+    setEditingPartnerId(null);
+    setPartnerDraft(null);
+    setPartnerLogoFile(null);
+    if (partnerLogoPreview) {
+      URL.revokeObjectURL(partnerLogoPreview);
+    }
+    setPartnerLogoPreview(null);
+  }
+
+  function handlePartnerLogoFile(file: File | null) {
+    setPartnerLogoFile(file);
+    if (partnerLogoPreview) {
+      URL.revokeObjectURL(partnerLogoPreview);
+    }
+    setPartnerLogoPreview(file ? URL.createObjectURL(file) : null);
+  }
+
+  function clearPartnerLogo() {
+    handlePartnerLogoFile(null);
+    if (partnerDraft) {
+      setPartnerDraft({ ...partnerDraft, logo_url: null });
+    }
+  }
+
+  async function savePartner() {
+    if (!partnerDraft || !editingPartnerId) return;
+    const supabase = createClient();
+    let logoUrl = partnerDraft.logo_url;
+
+    try {
+      if (partnerLogoFile) {
+        logoUrl = await uploadPartnerLogo(supabase, editingPartnerId, partnerLogoFile);
+      }
+
+      const res = await fetch("/api/admin/partners/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingPartnerId,
+          name: partnerDraft.name,
+          description: partnerDraft.description,
+          website: partnerDraft.website,
+          logoUrl: logoUrl ?? "",
+        }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        alert(json.error ?? "Failed to save partner");
+        return;
+      }
+      cancelEditPartner();
+      await loadData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to upload logo");
+    }
   }
 
   async function reviewSubmission(id: string, action: "approve" | "reject", reason?: string) {
@@ -1102,49 +1260,206 @@ export function AdminDashboard({
                 .filter((p) => p.status === "pending")
                 .map((org) => (
                   <Card key={org.id}>
-                    <p className="text-[13px] font-medium">{org.name}</p>
-                    {org.description && (
-                      <p className="mt-1 text-[12px] text-text-muted">{org.description}</p>
+                    {editingPartnerId === org.id && partnerDraft ? (
+                      <div className="space-y-3">
+                        <p className="text-[13px] font-medium">Edit showcase content</p>
+                        <div>
+                          <Label>Name</Label>
+                          <Input
+                            value={partnerDraft.name}
+                            onChange={(e) =>
+                              setPartnerDraft({ ...partnerDraft, name: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label>Description</Label>
+                          <Textarea
+                            value={partnerDraft.description}
+                            onChange={(e) =>
+                              setPartnerDraft({ ...partnerDraft, description: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label>Website</Label>
+                          <Input
+                            value={partnerDraft.website}
+                            placeholder="https://example.org"
+                            onChange={(e) =>
+                              setPartnerDraft({ ...partnerDraft, website: e.target.value })
+                            }
+                          />
+                        </div>
+                        <PartnerLogoField
+                          logoUrl={partnerDraft.logo_url}
+                          logoPreview={partnerLogoPreview}
+                          onFileChange={handlePartnerLogoFile}
+                          onClear={clearPartnerLogo}
+                        />
+                        <div className="flex gap-2">
+                          <Button className="px-3 py-1 text-[12px]" onClick={savePartner}>
+                            Save
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            className="px-3 py-1 text-[12px]"
+                            onClick={cancelEditPartner}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-[13px] font-medium">{org.name}</p>
+                        {org.description && (
+                          <p className="mt-1 text-[12px] text-text-muted">{org.description}</p>
+                        )}
+                        {org.website && (
+                          <p className="mt-1 text-[11px] text-text-caption">
+                            <a
+                              href={org.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline"
+                            >
+                              {org.website}
+                            </a>
+                          </p>
+                        )}
+                        <p className="mt-1 text-[11px] text-text-caption">
+                          Applied {org.created_at.slice(0, 10)}
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button
+                            className="px-3 py-1 text-[12px]"
+                            onClick={() => reviewPartner(org.id, "approve")}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            variant="danger"
+                            className="px-3 py-1 text-[12px]"
+                            onClick={() => setPartnerRejectId(org.id)}
+                          >
+                            Reject
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            className="px-3 py-1 text-[12px]"
+                            onClick={() => startEditPartner(org)}
+                          >
+                            Edit showcase
+                          </Button>
+                        </div>
+                      </>
                     )}
-                    {org.website && (
-                      <p className="mt-1 text-[11px] text-text-caption">
-                        <a
-                          href={org.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          {org.website}
-                        </a>
-                      </p>
-                    )}
-                    <p className="mt-1 text-[11px] text-text-caption">
-                      Applied {org.created_at.slice(0, 10)}
-                    </p>
-                    <div className="mt-3 flex gap-2">
-                      <Button
-                        className="px-3 py-1 text-[12px]"
-                        onClick={() => reviewPartner(org.id, "approve")}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        variant="danger"
-                        className="px-3 py-1 text-[12px]"
-                        onClick={() => setPartnerRejectId(org.id)}
-                      >
-                        Reject
-                      </Button>
-                    </div>
                   </Card>
                 ))
             )}
-            {partners.filter((p) => p.status !== "pending").length > 0 && (
+            {partners.filter((p) => p.status === "approved").length > 0 && (
               <div className="mt-8">
-                <h3 className="mb-3 text-sm font-medium text-text-muted">Reviewed</h3>
+                <h3 className="mb-3 text-sm font-medium text-text-muted">
+                  Approved partners (shown on /partnership)
+                </h3>
+                <div className="space-y-3">
+                  {partners
+                    .filter((p) => p.status === "approved")
+                    .map((org) => (
+                      <Card key={org.id}>
+                        {editingPartnerId === org.id && partnerDraft ? (
+                          <div className="space-y-3">
+                            <div>
+                              <Label>Name</Label>
+                              <Input
+                                value={partnerDraft.name}
+                                onChange={(e) =>
+                                  setPartnerDraft({ ...partnerDraft, name: e.target.value })
+                                }
+                              />
+                            </div>
+                            <div>
+                              <Label>Description</Label>
+                              <Textarea
+                                value={partnerDraft.description}
+                                onChange={(e) =>
+                                  setPartnerDraft({
+                                    ...partnerDraft,
+                                    description: e.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                            <div>
+                              <Label>Website</Label>
+                              <Input
+                                value={partnerDraft.website}
+                                placeholder="https://example.org"
+                                onChange={(e) =>
+                                  setPartnerDraft({ ...partnerDraft, website: e.target.value })
+                                }
+                              />
+                            </div>
+                            <PartnerLogoField
+                              logoUrl={partnerDraft.logo_url}
+                              logoPreview={partnerLogoPreview}
+                              onFileChange={handlePartnerLogoFile}
+                              onClear={clearPartnerLogo}
+                            />
+                            <div className="flex gap-2">
+                              <Button className="px-3 py-1 text-[12px]" onClick={savePartner}>
+                                Save
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                className="px-3 py-1 text-[12px]"
+                                onClick={cancelEditPartner}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="flex min-w-0 flex-1 items-start gap-3">
+                              {org.logo_url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={org.logo_url}
+                                  alt=""
+                                  className="h-10 w-auto max-w-[80px] shrink-0 object-contain"
+                                />
+                              ) : null}
+                              <div className="min-w-0">
+                                <p className="text-[13px] font-medium">{org.name}</p>
+                                {org.description && (
+                                  <p className="mt-1 text-[12px] text-text-muted line-clamp-2">
+                                    {org.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <Button
+                              variant="secondary"
+                              className="shrink-0 px-3 py-1 text-[12px]"
+                              onClick={() => startEditPartner(org)}
+                            >
+                              Edit
+                            </Button>
+                          </div>
+                        )}
+                      </Card>
+                    ))}
+                </div>
+              </div>
+            )}
+            {partners.filter((p) => p.status === "rejected").length > 0 && (
+              <div className="mt-8">
+                <h3 className="mb-3 text-sm font-medium text-text-muted">Rejected</h3>
                 <div className="space-y-2">
                   {partners
-                    .filter((p) => p.status !== "pending")
+                    .filter((p) => p.status === "rejected")
                     .map((org) => (
                       <Card key={org.id} className="text-[12px]">
                         <span className="font-medium">{org.name}</span>

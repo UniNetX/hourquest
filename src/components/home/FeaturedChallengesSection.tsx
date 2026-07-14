@@ -31,7 +31,7 @@ export function FeaturedChallengesSection({
                   {challenge.difficulty}
                 </span>
                 <h3 className="font-display">{challenge.title}</h3>
-                <p className="pillar-card__body line-clamp-3">{challenge.description}</p>
+                <p className="pillar-card__body">{challenge.description}</p>
                 <div className="mt-auto flex items-center justify-between pt-2">
                   <span className="text-xs font-semibold text-primary-dark">
                     {challenge.hours_earned} hrs

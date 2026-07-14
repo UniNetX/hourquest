@@ -25,7 +25,7 @@ async function getHomeData() {
   const supabase = await createClient();
   const empty = {
     featured: [] as Challenge[],
-    stats: { hours: 0, students: 0, challenges: 0 },
+    stats: { hours: 0, students: 0, challenges: 0, partners: 0 },
     testimonials: [],
     user: null,
   };
@@ -47,6 +47,10 @@ async function getHomeData() {
         .from("challenges")
         .select("id", { count: "exact", head: true })
         .eq("active", true),
+      supabase
+        .from("partner_organizations")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "approved"),
     ]),
     supabase.auth.getUser(),
   ]);
@@ -85,6 +89,7 @@ async function getHomeData() {
       hours: Math.floor(hours),
       students: statsRes[1].count ?? 0,
       challenges: statsRes[2].count ?? 0,
+      partners: statsRes[3].count ?? 0,
     },
     testimonials: testimonialsRes.data ?? [],
     user: userRes.data.user,

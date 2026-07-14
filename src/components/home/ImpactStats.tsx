@@ -8,7 +8,7 @@ function formatCount(value: number) {
 export function ImpactStats({
   stats,
 }: {
-  stats: { hours: number; students: number; challenges: number };
+  stats: { hours: number; students: number; challenges: number; partners: number };
 }) {
   return (
     <section className="section-alt section-y">
@@ -18,7 +18,7 @@ export function ImpactStats({
           title="Impact by the Numbers"
           subtitle="Students across the country are turning environmental and medical action into verified volunteer hours."
         />
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             value={formatCount(stats.hours)}
             label="Hours Verified"
@@ -33,6 +33,11 @@ export function ImpactStats({
             value={formatCount(stats.challenges)}
             label="Challenges"
             description="Environmental and medical actions you can complete anywhere"
+          />
+          <StatCard
+            value={formatCount(stats.partners)}
+            label="Confirmed Partners"
+            description="Organizations approved and featured on HourQuest"
           />
         </div>
       </div>
