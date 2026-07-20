@@ -241,7 +241,12 @@ export type Database = {
         Returns: Challenge;
       };
       admin_reorder_challenges: {
-        Args: { p_track: string; p_category: string; p_ordered_ids: string[] };
+        Args: {
+          p_track: string;
+          p_category: string;
+          p_ordered_ids: string[];
+          p_partner_org_id?: string | null;
+        };
         Returns: void;
       };
       admin_delete_challenge: {

@@ -270,11 +270,13 @@ const ADMIN_TAB_LABELS: Record<
 
 function SortableChallengeRow({
   challenge,
+  partnerOrgName,
   onEdit,
   onToggle,
   onDelete,
 }: {
   challenge: Challenge;
+  partnerOrgName?: string | null;
   onEdit: (c: Challenge) => void;
   onToggle: (c: Challenge) => void;
   onDelete: (id: string) => void;
@@ -300,6 +302,9 @@ function SortableChallengeRow({
           )}
         </div>
         <p className="truncate text-[13px] font-medium">{challenge.title}</p>
+        {partnerOrgName && (
+          <p className="truncate text-[11px] text-text-caption">{partnerOrgName}</p>
+        )}
       </div>
       <span className="rounded-full bg-primary-light px-2 py-0.5 text-[10px] text-primary">
         {challenge.hours_earned} hrs
@@ -382,6 +387,7 @@ export function AdminDashboard({
   );
   const [users, setUsers] = useState(initialUsers);
   const [trackFilter, setTrackFilter] = useState<ChallengeTrack>("environmental");
+  const [partnerOrgFilter, setPartnerOrgFilter] = useState<string | "all">("all");
   const [categoryFilter, setCategoryFilter] = useState<ChallengeCategory | "all">("all");
   const [activeOnly, setActiveOnly] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -541,9 +547,26 @@ export function AdminDashboard({
 
   async function saveChallenge() {
     if (!editing?.title || !editing.category || !editing.difficulty) return;
+    const track = editing.track ?? challengeTrack(editing as Challenge);
+    if (track === "partnership" && !editing.partner_org_id) {
+      alert("Select a partner organization for partnership challenges.");
+      return;
+    }
+    const difficulty = editing.difficulty as ChallengeDifficulty;
+    const defaults = DIFFICULTY_DEFAULTS[difficulty];
     const payload = {
-      ...editing,
-      track: editing.track ?? challengeTrack(editing as Challenge),
+      id: editing.id,
+      title: editing.title,
+      description: editing.description ?? "",
+      proof_instructions: editing.proof_instructions ?? "",
+      track,
+      category: editing.category,
+      difficulty: editing.difficulty,
+      hours_earned: editing.hours_earned ?? defaults.hours,
+      points: editing.points ?? defaults.points,
+      active: editing.active ?? true,
+      sort_order: editing.sort_order,
+      ...(track === "partnership" ? { partner_org_id: editing.partner_org_id } : {}),
     };
     const res = await fetch("/api/admin/challenges", {
       method: "POST",
@@ -702,14 +725,34 @@ export function AdminDashboard({
     loadData();
   }
 
+  const approvedPartners = useMemo(
+    () => partners.filter((p) => p.status === "approved"),
+    [partners],
+  );
+
+  const partnerNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const partner of approvedPartners) {
+      map.set(partner.id, partner.name);
+    }
+    return map;
+  }, [approvedPartners]);
+
   const filteredChallenges = useMemo(() => {
     return challenges.filter((c) => {
       if (challengeTrack(c) !== trackFilter) return false;
+      if (
+        trackFilter === "partnership" &&
+        partnerOrgFilter !== "all" &&
+        c.partner_org_id !== partnerOrgFilter
+      ) {
+        return false;
+      }
       if (categoryFilter !== "all" && c.category !== categoryFilter) return false;
       if (activeOnly && !c.active) return false;
       return true;
     });
-  }, [challenges, categoryFilter, activeOnly, trackFilter]);
+  }, [challenges, categoryFilter, activeOnly, trackFilter, partnerOrgFilter]);
 
   const filteredUsers = users.filter(
     (u) =>
@@ -720,11 +763,12 @@ export function AdminDashboard({
   async function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const items = filteredChallenges.filter((c) => categoryFilter === "all" || c.category === categoryFilter);
+    if (categoryFilter === "all") return;
+    if (trackFilter === "partnership" && partnerOrgFilter === "all") return;
+    const items = filteredChallenges.filter((c) => c.category === categoryFilter);
     const oldIndex = items.findIndex((c) => c.id === active.id);
     const newIndex = items.findIndex((c) => c.id === over.id);
     const reordered = arrayMove(items, oldIndex, newIndex);
-    if (categoryFilter === "all") return;
     const category = categoryFilter;
     await fetch("/api/admin/challenges/reorder", {
       method: "POST",
@@ -733,6 +777,7 @@ export function AdminDashboard({
         track: trackFilter,
         category,
         orderedIds: reordered.map((c) => c.id),
+        ...(trackFilter === "partnership" ? { partnerOrgId: partnerOrgFilter } : {}),
       }),
     });
     loadData();
@@ -824,6 +869,7 @@ export function AdminDashboard({
                     onClick={() => {
                       setTrackFilter(t.id);
                       setCategoryFilter("all");
+                      setPartnerOrgFilter("all");
                     }}
                     className={cn(
                       "rounded-full px-3 py-1 text-[12px]",
@@ -834,6 +880,37 @@ export function AdminDashboard({
                   </button>
                 ))}
               </div>
+              {trackFilter === "partnership" && approvedPartners.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPartnerOrgFilter("all")}
+                    className={cn(
+                      "rounded-full px-3 py-1 text-[12px]",
+                      partnerOrgFilter === "all"
+                        ? "bg-primary text-white"
+                        : "border border-border",
+                    )}
+                  >
+                    All partners
+                  </button>
+                  {approvedPartners.map((partner) => (
+                    <button
+                      key={partner.id}
+                      type="button"
+                      onClick={() => setPartnerOrgFilter(partner.id)}
+                      className={cn(
+                        "rounded-full px-3 py-1 text-[12px]",
+                        partnerOrgFilter === partner.id
+                          ? "bg-primary text-white"
+                          : "border border-border",
+                      )}
+                    >
+                      {partner.name}
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap gap-2">
                   <button
@@ -879,6 +956,9 @@ export function AdminDashboard({
                         difficulty: "easy",
                         track: trackFilter,
                         category: defaultCategory,
+                        ...(trackFilter === "partnership" && partnerOrgFilter !== "all"
+                          ? { partner_org_id: partnerOrgFilter }
+                          : {}),
                       });
                       setPanelOpen(true);
                     }}
@@ -898,6 +978,11 @@ export function AdminDashboard({
                     <SortableChallengeRow
                       key={challenge.id}
                       challenge={challenge}
+                      partnerOrgName={
+                        challenge.partner_org_id
+                          ? partnerNameById.get(challenge.partner_org_id)
+                          : null
+                      }
                       onEdit={(c) => {
                         setEditing(c);
                         setPanelOpen(true);
@@ -1604,6 +1689,8 @@ export function AdminDashboard({
                       ...editing,
                       track: nextTrack,
                       category: nextCategory as ChallengeCategory,
+                      partner_org_id:
+                        nextTrack === "partnership" ? editing.partner_org_id ?? null : null,
                     });
                   }}
                 >
@@ -1614,6 +1701,34 @@ export function AdminDashboard({
                   ))}
                 </select>
               </div>
+              {(editing.track ?? trackFilter) === "partnership" && (
+                <div>
+                  <Label>Partner organization</Label>
+                  {approvedPartners.length === 0 ? (
+                    <p className="mt-1 text-[12px] text-text-muted">
+                      No approved partner organizations yet. Approve a partner on the Partners tab first.
+                    </p>
+                  ) : (
+                    <select
+                      className="h-[40px] w-full rounded-[10px] border px-3 text-[13px]"
+                      value={editing.partner_org_id ?? ""}
+                      onChange={(e) =>
+                        setEditing({
+                          ...editing,
+                          partner_org_id: e.target.value || null,
+                        })
+                      }
+                    >
+                      <option value="">Select partner organization</option>
+                      {approvedPartners.map((partner) => (
+                        <option key={partner.id} value={partner.id}>
+                          {partner.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
               <div>
                 <Label>Category</Label>
                 <select
@@ -1686,19 +1801,42 @@ export function AdminDashboard({
                   />
                 </div>
               </div>
+              <label className="flex items-center gap-2 text-[13px]">
+                <input
+                  type="checkbox"
+                  checked={editing.active ?? true}
+                  onChange={(e) => setEditing({ ...editing, active: e.target.checked })}
+                />
+                Published (visible to students)
+              </label>
             </div>
 
             <div className="mt-6 border-t border-border pt-4">
               <p className="mb-2 text-[10px] font-medium uppercase tracking-wide text-[#888]">
                 Preview — how students will see this challenge
               </p>
-              {editing.title && editing.description && editing.difficulty && (
-                <ChallengeCard
-                  challenge={editing as Challenge}
-                  startHref="#"
-                  preview
-                />
-              )}
+              {editing.title && editing.description && editing.difficulty && (() => {
+                const selectedPartner = editing.partner_org_id
+                  ? approvedPartners.find((p) => p.id === editing.partner_org_id)
+                  : null;
+                return (
+                  <ChallengeCard
+                    challenge={{
+                      ...(editing as Challenge),
+                      partner_organization: selectedPartner
+                        ? {
+                            id: selectedPartner.id,
+                            name: selectedPartner.name,
+                            logo_url: selectedPartner.logo_url,
+                            description: selectedPartner.description,
+                          }
+                        : null,
+                    }}
+                    startHref="#"
+                    preview
+                  />
+                );
+              })()}
             </div>
 
             <div className="mt-6 flex gap-2">
